@@ -64,15 +64,15 @@ const nodeTemplates = [
 
 export default function NodeToolbar({ onAddNode }: NodeToolbarProps) {
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-auto flex flex-col rounded-lg">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">Nodes</h3>
-        <p className="text-sm text-gray-600">Drag nodes to the canvas</p>
+      <div className="p-3 border-b border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">Add Nodes</h3>
+        <p className="text-xs text-gray-600">Click to add to workflow</p>
       </div>
 
       {/* Node List */}
-      <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <div className="p-3 space-y-2">
         {nodeTemplates.map((template) => {
           const IconComponent = template.icon;
           return (
@@ -80,11 +80,6 @@ export default function NodeToolbar({ onAddNode }: NodeToolbarProps) {
               key={template.type}
               className="group cursor-pointer border border-gray-200 rounded-lg p-3 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
               onClick={() => onAddNode(template.data)}
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData('application/reactflow', JSON.stringify(template.data));
-                e.dataTransfer.effectAllowed = 'move';
-              }}
             >
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 p-2 bg-gray-100 group-hover:bg-blue-100 rounded-lg transition-colors">
@@ -102,13 +97,6 @@ export default function NodeToolbar({ onAddNode }: NodeToolbarProps) {
             </div>
           );
         })}
-      </div>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <p className="text-xs text-gray-500 text-center">
-          Click to add • Drag to position
-        </p>
       </div>
     </div>
   );

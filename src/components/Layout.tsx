@@ -106,47 +106,37 @@ export default function Layout() {
                 </>
               )}
             </button>
-
-            {/* Export App Button */}
-            <button 
-              onClick={exportProject}
-              disabled={nodes.filter(n => n.data.generatedCode).length === 0}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              <Download size={16} />
-              <span>Export App</span>
-            </button>
           </div>
         </header>
 
-        {/* Tab Navigation */}
-        <div className="bg-white border-b border-gray-200">
-          <nav className="-mb-px flex">
+        {/* Tab Navigation - N8n Style Centered */}
+        <div className="absolute top-[52px] left-1/2 transform -translate-x-1/2 z-10">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex">
             <button
               onClick={() => setActiveTab('workflow')}
-              className={`whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm ${
+              className={`px-6 py-2 font-medium text-sm rounded-l-lg transition-colors ${
                 activeTab === 'workflow'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
               Workflow Editor
             </button>
             <button
               onClick={() => setActiveTab('preview')}
-              className={`whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm ${
+              className={`px-6 py-2 font-medium text-sm rounded-r-lg transition-colors ${
                 activeTab === 'preview'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
               Preview
             </button>
-          </nav>
+          </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 relative">
           {activeTab === 'workflow' ? (
             <div className="h-full">
               <WorkflowEditor />

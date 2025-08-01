@@ -114,14 +114,14 @@ export default function WorkflowEditor() {
   }, [setNodes]);
 
   return (
-    <div className="h-full flex">
-      {/* Node Toolbar */}
-      <div className="w-64 bg-white border-r border-gray-200">
+    <div className="h-full flex relative">
+      {/* Node Toolbar - Absolute positioned */}
+      <div className="absolute left-4 top-12 w-64 bg-white border border-gray-200 rounded-lg shadow-sm z-10">
         <NodeToolbar onAddNode={handleAddNode} />
       </div>
 
-      {/* Flow Canvas */}
-      <div className="flex-1">
+      {/* Flow Canvas - Full width */}
+      <div className="w-full h-full">
         <ReactFlow
           nodes={nodes}
           edges={edges}
