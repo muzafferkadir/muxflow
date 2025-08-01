@@ -158,18 +158,24 @@ CRITICAL TECHNICAL REQUIREMENTS:
 - No external dependencies except Tailwind CDN
 
 PROJECT STRUCTURE REQUIREMENTS:
-- index.html (main HTML file)
+- index.html (main HTML file with proper ES6 module support)
 - styles.css (custom styles if needed, minimal since using Tailwind)
 - app.js (main application logic)
 - components.js (reusable UI components if needed)
 - utils.js (utility functions if needed)
+
+CRITICAL MODULE REQUIREMENTS:
+- HTML file MUST include <script type="module" src="app.js"></script> for main script
+- ALL JavaScript files with imports/exports MUST be loaded with type="module"
+- Use proper ES6 import/export syntax
+- Ensure all module dependencies are correctly linked
 
 CRITICAL OUTPUT FORMAT:
 - Return ONLY a JSON object with file structure
 - Do NOT include markdown code blocks or explanations
 - JSON format: {"files": [{"name": "filename.ext", "content": "file content"}]}
 - Each file content should be complete and functional
-- HTML should include Tailwind CDN
+- HTML should include Tailwind CDN and proper module script tags
 - All files should work together as a cohesive application
 
 SECURITY & COMPATIBILITY:
@@ -184,11 +190,17 @@ ${workflowDescription}
 
 Generate a complete project structure that implements this entire workflow. The project should:
 1. Have proper file separation (HTML, CSS, JS)
-2. Use modern JavaScript modules and classes where appropriate
+2. Use modern JavaScript modules with proper import/export syntax
 3. Implement all workflow logic with localStorage persistence
 4. Be responsive and user-friendly
 5. Include proper error handling and validation
 6. Work as a complete static web application
+
+CRITICAL MODULE SETUP EXAMPLE:
+HTML should include: <script type="module" src="app.js"></script>
+JavaScript files should use: 
+- export { functionName, className } from './utils.js';
+- import { functionName } from './utils.js';
 
 CRITICAL: Return only a JSON object with the file structure. No explanations or markdown.`
       }

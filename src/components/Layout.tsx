@@ -58,7 +58,7 @@ export default function Layout() {
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-bold text-gray-900">MuxFlow</h1>
-            <span className="text-sm text-gray-500">AI Micro App Builder</span>
+            <span className="text-sm text-gray-500">AI Mini App Builder</span>
             {hasUnsavedChanges && (
               <span className="text-xs text-orange-600 flex items-center space-x-1">
                 <AlertCircle size={12} />

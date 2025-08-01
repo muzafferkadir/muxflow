@@ -1,8 +1,8 @@
 # MuxFlow
 
-**Build AI-Powered Micro Apps with Visual Workflows**
+**Build AI-Powered Mini Apps with Visual Workflows**
 
-MuxFlow is an open-source workflow builder for creating AI-powered micro applications. Connect prompts, AI models, and tools to create powerful, interactive workflows that can be deployed as standalone applications.
+MuxFlow is an open-source workflow builder for creating AI-powered mini applications. Connect prompts, AI models, and tools to create powerful, interactive workflows that can be deployed as standalone applications.
 
 ## ✨ Features
 
