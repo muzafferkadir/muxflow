@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import WorkflowEditor from '@/components/WorkflowEditor';
 import PreviewPanel from '@/components/PreviewPanel';
+import ProjectFiles from '@/components/ProjectFiles';
 import { useWorkflow } from '@/contexts/WorkflowContext';
 import { Save, Globe, Loader2, AlertCircle, Download } from 'lucide-react';
 
@@ -13,19 +14,22 @@ export default function Layout() {
   const { 
     nodes,
     saveWorkflow, 
-    generateWebApp, 
+    generateApp,
     exportProject,
     hasUnsavedChanges,
     isSaved,
-    isGeneratingWebApp 
+    isGeneratingWebApp
   } = useWorkflow();
 
-  // Check if all nodes have descriptions and generated code
-  const allNodesHaveDescriptions = nodes.length > 0 && nodes.every(node => node.data.description?.trim());
-  const allNodesHaveCode = nodes.length > 0 && nodes.every(node => node.data.generatedCode?.trim());
+  const isProcessing = isGeneratingWebApp;
+  const allNodesHaveDescriptions = nodes.every(node => node.data.description?.trim());
   const nodesWithoutDescription = nodes.filter(node => !node.data.description?.trim()).length;
 
-  React.useEffect(() => {
+  const handleGenerateApp = async () => {
+    await generateApp();
+  };
+
+  useEffect(() => {
     setMounted(true);
   }, []);
 
@@ -79,35 +83,37 @@ export default function Layout() {
               <span className="text-xs opacity-75">(Ctrl+S)</span>
             </button>
 
-            {/* Generate Web App Button */}
+            {/* Generate App Button */}
             <button 
-              onClick={generateWebApp}
-              disabled={isGeneratingWebApp || nodes.length === 0 || !allNodesHaveCode || !isSaved}
+              onClick={handleGenerateApp}
+              disabled={isProcessing || nodes.length === 0 || !isSaved || !allNodesHaveDescriptions}
               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               title={
                 nodes.length === 0 
                   ? "Add nodes to your workflow" 
                   : !isSaved
                     ? "Save workflow first"
-                  : !allNodesHaveCode 
-                    ? "Generate code for all nodes first"
-                    : "Generate live web application"
+                  : !allNodesHaveDescriptions
+                    ? `Add descriptions to all nodes (${nodesWithoutDescription} missing)`
+                  : "Generate complete app with both HTML and project files"
               }
             >
-              {isGeneratingWebApp ? (
+              {isProcessing ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Generating...</span>
+                  <span>
+                    {isGeneratingWebApp ? 'Creating App...' : 'Processing...'}
+                  </span>
                 </>
               ) : (
                 <>
                   <Globe size={16} />
-                  <span>Generate Web App</span>
+                  <span>Generate App</span>
                   {!isSaved && nodes.length > 0 && (
                     <span className="text-xs opacity-75">(Save first)</span>
                   )}
-                  {!allNodesHaveCode && nodes.length > 0 && isSaved && (
-                    <span className="text-xs opacity-75">(Generate code first)</span>
+                  {!allNodesHaveDescriptions && isSaved && nodes.length > 0 && (
+                    <span className="text-xs opacity-75">({nodesWithoutDescription} need descriptions)</span>
                   )}
                 </>
               )}
@@ -116,7 +122,7 @@ export default function Layout() {
         </header>
 
         {/* Tab Navigation - N8n Style Centered */}
-        <div className="absolute top-[52px] left-1/2 transform -translate-x-1/2 z-10">
+        <div className="absolute top-[68px] left-1/2 transform -translate-x-1/2 z-10">
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex">
             <button
               onClick={() => setActiveTab('workflow')}
@@ -126,11 +132,11 @@ export default function Layout() {
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Workflow Editor
+              Workflow
             </button>
             <button
               onClick={() => setActiveTab('preview')}
-              className={`px-6 py-2 font-medium text-sm rounded-r-lg transition-colors ${
+              className={`px-6 py-2 font-medium text-sm transition-colors ${
                 activeTab === 'preview'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -138,18 +144,36 @@ export default function Layout() {
             >
               Preview
             </button>
+            <button
+              onClick={() => setActiveTab('files')}
+              className={`px-6 py-2 font-medium text-sm rounded-r-lg transition-colors ${
+                activeTab === 'files'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Files
+            </button>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 relative">
-          {activeTab === 'workflow' ? (
-            <div className="h-full">
+        <div className="flex-1 flex pt-12">
+          {activeTab === 'workflow' && (
+            <div className="w-full h-full">
               <WorkflowEditor />
             </div>
-          ) : (
-            <div className="h-full overflow-hidden">
+          )}
+          
+          {activeTab === 'preview' && (
+            <div className="w-full h-full">
               <PreviewPanel />
+            </div>
+          )}
+
+          {activeTab === 'files' && (
+            <div className="w-full h-full">
+              <ProjectFiles />
             </div>
           )}
         </div>

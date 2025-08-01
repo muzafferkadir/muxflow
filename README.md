@@ -2,26 +2,30 @@
 
 **Build AI-Powered Micro Apps with Visual Workflows**
 
-MuxFlow is an open-source workflow builder for creating AI-powered micro applications, inspired by Google Opal. Connect prompts, AI models, and tools to create powerful, interactive workflows that can be deployed as standalone applications.
+MuxFlow is an open-source workflow builder for creating AI-powered micro applications. Connect prompts, AI models, and tools to create powerful, interactive workflows that can be deployed as standalone applications.
 
 ## ✨ Features
 
-- **Visual Workflow Editor**: Intuitive drag-and-drop interface similar to n8n
-- **AI-First Design**: Integrated AI nodes for prompts, transformations, and processing
-- **Live Preview**: Real-time preview of your micro apps as you build
-- **Component Library**: AI-generated UI components that adapt to your needs
+- **Visual Workflow Editor**: Intuitive drag-and-drop interface built with React Flow
+- **AI-First Design**: AI-powered app generation from workflow descriptions
+- **Live Preview**: Real-time preview of your generated applications
+- **Complete App Generation**: Single HTML files or multi-file project structures
 - **Modern Stack**: Built with Next.js, TypeScript, and Tailwind CSS
-- **React Flow Engine**: Robust workflow visualization and management
+- **OpenRouter Integration**: Seamless AI model integration
 
 ## 🚀 Getting Started
 
 ```bash
 # Clone the repository
-git clone https://github.com/user/muxflow.git
+git clone https://github.com/muzafferkadir/muxflow.git
 cd muxflow
 
 # Install dependencies
 npm install
+
+# Set up environment variables
+cp .env.example .env.local
+# Add your OpenRouter API key to .env.local
 
 # Start the development server
 npm run dev
@@ -29,25 +33,35 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 📋 Usage Guide
+## � Environment Setup
+
+Create a `.env.local` file with your OpenRouter API key:
+
+```env
+NEXT_PUBLIC_OPENROUTER_API_KEY=your_api_key_here
+NEXT_PUBLIC_DEFAULT_MODEL=google/gemini-flash-1.5
+```
+
+## �📋 Usage Guide
 
 ### Basic Workflow Creation
 
-1. **Left Panel**: Toolbar containing different node types
-2. **Main Canvas**: Area where you build your workflow
-3. **Right Panel**: Workflow preview and code view
+1. **Workflow Tab**: Build your workflow using the visual editor
+2. **Preview Tab**: See your generated application in real-time
+3. **Files Tab**: Download complete project structures
 
 ### Node Types
 
-- **Input Node**: AI-designed form components (text, select, checkbox, etc.) - Data stored in localStorage
-- **Show/Display Node**: Content display pages - AI generates page layout based on prompts
-- **Action Node**: Processing node - Functions, calculations, client-side API requests
+- **Input Node**: AI-designed form components (text, select, checkbox, etc.)
+- **Show/Display Node**: Content display pages designed by AI
+- **Action Node**: Processing functions, calculations, client-side operations
 
-### Adding Nodes
+### Workflow to App Process
 
-You can add nodes in two ways:
-1. Click on a node in the left panel
-2. Drag and drop a node from the panel to the canvas
+1. **Design Workflow**: Add nodes and connect them in logical order
+2. **Add Descriptions**: Describe what each node should do
+3. **Generate App**: Single button creates both HTML preview and project files
+4. **Preview & Export**: Test in preview tab, download files from files tab
 
 ### AI Agent System
 

@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Node, Edge } from 'reactflow';
-import { aiService, AIResponse } from '@/services/aiService';
-import { webAppGenerator, WebAppProject } from '@/services/webAppGenerator';
+import { webAppGenerator } from '@/services/webAppGenerator';
+import type { ProjectFile } from '@/services/webAppGenerator';
 
 interface WorkflowNode extends Node {
   data: {
@@ -27,12 +27,12 @@ interface WorkflowContextType {
   hasUnsavedChanges: boolean;
   todoList: string[];
   generatedProject: any;
-  webAppProject: WebAppProject | null;
+  generatedApp: string | null;
+  projectFiles: ProjectFile[] | null;
   webAppPreviewUrl: string | null;
   isGeneratingWebApp: boolean;
   analyzeWorkflow: () => Promise<void>;
   generateApp: () => Promise<void>;
-  generateWebApp: () => Promise<void>;
   saveWorkflow: () => void;
   loadWorkflow: () => boolean;
   generateNodeCode: (nodeId: string) => Promise<void>;
@@ -52,12 +52,13 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [todoList, setTodoList] = useState<string[]>([]);
   const [generatedProject, setGeneratedProject] = useState<any>(null);
+  const [generatedApp, setGeneratedApp] = useState<string | null>(null);
+  const [projectFiles, setProjectFiles] = useState<ProjectFile[] | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [webAppProject, setWebAppProject] = useState<WebAppProject | null>(null);
   const [webAppPreviewUrl, setWebAppPreviewUrl] = useState<string | null>(null);
   const [isGeneratingWebApp, setIsGeneratingWebApp] = useState(false);
 
-  // Load project from localStorage on mount
+  // Load workflow from localStorage on mount
   useEffect(() => {
     const savedProject = localStorage.getItem('muxflow_project');
     if (savedProject) {
@@ -69,7 +70,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Load workflow from localStorage on mount
+    // Load workflow from localStorage
     const savedWorkflow = localStorage.getItem('muxflow_workflow');
     if (savedWorkflow) {
       try {
@@ -81,68 +82,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Error loading saved workflow:', error);
       }
-    } else {
-      // No saved workflow, start with an example workflow
-      const exampleNodes = [
-        {
-          id: 'node_1',
-          type: 'custom',
-          position: { x: 300, y: 550 },
-          data: {
-            label: 'Task Input',
-            nodeType: 'input',
-            prompt: 'Create a form to add tasks to a to-do list.',
-            description: 'A form to input task names.',
-            generatedCode: '',
-            isProcessing: false,
-            error: '',
-          },
-          width: 300,
-          height: 100,
-        },
-        {
-          id: 'node_2',
-          type: 'custom',
-          position: { x: 550, y: 400 },
-          data: {
-            label: 'Add Task',
-            nodeType: 'action',
-            prompt: 'Create a function to add tasks to a list.',
-            description: 'A function to handle adding tasks to the to-do list.',
-            generatedCode: '',
-            isProcessing: false,
-            error: '',
-          },
-          width: 300,
-          height: 100,
-        },
-        {
-          id: 'node_3',
-          type: 'custom',
-          position: { x: 900, y: 250 },
-          data: {
-            label: 'Task List',
-            nodeType: 'show',
-            prompt: 'Create a page to display the to-do list.',
-            description: 'A page to show all tasks in the to-do list.',
-            generatedCode: '',
-            isProcessing: false,
-            error: '',
-          },
-          width: 300,
-          height: 100,
-        },
-      ];
-
-      const exampleEdges = [
-        { id: 'e1-2', source: 'node_1', target: 'node_2', type: 'default' },
-        { id: 'e2-3', source: 'node_2', target: 'node_3', type: 'default' },
-      ];
-
-      setNodes(exampleNodes);
-      setEdges(exampleEdges);
-      setIsSaved(true);
-      setHasUnsavedChanges(false);
     }
 
     // Mark initial load as complete
@@ -238,51 +177,45 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setIsGenerating(true);
+    setIsGeneratingWebApp(true);
     
     try {
-      // Get execution order
-      const executionOrder = getNodeExecutionOrder();
-      
-      // Analyze workflow requirements
-      const requirements = executionOrder.map(node => ({
-        id: node.id,
-        type: node.data.nodeType,
-        description: node.data.description || '',
-        label: node.data.label
-      }));
-
       // Save project to localStorage
       const projectData = {
-        nodes: requirements,
+        nodes: nodes,
         edges: edges,
         timestamp: new Date().toISOString(),
-        requirements: requirements.map(req => `${req.type}: ${req.description}`).join('\n')
+        workflowType: 'integrated-app'
       };
       
       localStorage.setItem('muxflow_project', JSON.stringify(projectData));
       setGeneratedProject(projectData);
 
-      // Mark all nodes as processing
-      setNodes(prev => prev.map(node => ({
-        ...node,
-        data: { ...node.data, isProcessing: true, error: '' }
-      })));
-
-      // Generate code for each node in order
-      for (const node of executionOrder) {
-        await generateNodeCode(node.id);
+      // Generate both HTML and project files
+      const result = await webAppGenerator.generateFromWorkflow(nodes, edges);
+      
+      if (result.success) {
+        // Set both HTML content and project files
+        if (result.htmlContent) {
+          setGeneratedApp(result.htmlContent);
+        }
+        
+        if (result.projectFiles) {
+          setProjectFiles(result.projectFiles);
+        }
+        
+        console.log('App generated successfully');
+      } else {
+        throw new Error(result.error || 'Failed to generate app');
       }
-
-      alert('App generation completed! Check the preview panel.');
       
     } catch (error) {
       console.error('Error generating app:', error);
       alert('Error generating app. Please try again.');
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingWebApp(false);
     }
-  }, [nodes, edges, getNodeExecutionOrder]);
+  }, [nodes, edges]);
 
   const saveWorkflow = useCallback(() => {
     try {
@@ -325,116 +258,17 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const analyzeWorkflow = useCallback(async () => {
-    if (nodes.length === 0) {
-      setTodoList(['Add nodes to your workflow to begin analysis']);
-      return;
-    }
-
-    setIsAnalyzing(true);
-    try {
-      const response = await aiService.analyzeWorkflow(nodes, edges);
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      // Parse the response into a todo list
-      const tasks = response.content
-        .split('\n')
-        .filter(line => line.trim() && /^\d+\./.test(line.trim()))
-        .map(line => line.replace(/^\d+\.\s*/, '').trim());
-
-      setTodoList(tasks);
-    } catch (error) {
-      console.error('Analysis failed:', error);
-      setTodoList(['Failed to analyze workflow. Please check your API configuration.']);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [nodes, edges]);
+    // Note: Workflow analysis feature deprecated
+    // AI service now directly generates complete apps from workflow
+    console.log('Workflow analysis deprecated. Use generateWebApp() for complete app generation.');
+    setTodoList(['Use "Generate App" to create your complete application']);
+  }, []);
 
   const generateNodeCode = useCallback(async (nodeId: string) => {
-    const nodeIndex = nodes.findIndex(n => n.id === nodeId);
-    if (nodeIndex === -1) return;
-
-    const node = nodes[nodeIndex];
-    if (!node.data.description) {
-      alert('Please add a description to the node before generating code.');
-      return;
-    }
-
-    // Update node to show processing state
-    setNodes(prevNodes => 
-      prevNodes.map(n => 
-        n.id === nodeId 
-          ? { ...n, data: { ...n.data, isProcessing: true, error: undefined } }
-          : n
-      )
-    );
-
-    try {
-      let response: AIResponse;
-
-      switch (node.data.nodeType) {
-        case 'input':
-          response = await aiService.generateInputForm(
-            node.data.description, 
-            node.data.description || ''
-          );
-          break;
-        case 'show':
-          response = await aiService.generateDisplayPage(
-            node.data.description, 
-            node.data.description || ''
-          );
-          break;
-        case 'action':
-          response = await aiService.generateActionFunction(
-            node.data.description, 
-            node.data.description || ''
-          );
-          break;
-        default:
-          throw new Error('Unknown node type');
-      }
-
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      // Update node with generated code
-      setNodes(prevNodes => 
-        prevNodes.map(n => 
-          n.id === nodeId 
-            ? { 
-                ...n, 
-                data: { 
-                  ...n.data, 
-                  generatedCode: response.content,
-                  isProcessing: false,
-                  error: undefined
-                } 
-              }
-            : n
-        )
-      );
-    } catch (error) {
-      console.error('Code generation failed:', error);
-      setNodes(prevNodes => 
-        prevNodes.map(n => 
-          n.id === nodeId 
-            ? { 
-                ...n, 
-                data: { 
-                  ...n.data, 
-                  isProcessing: false,
-                  error: error instanceof Error ? error.message : 'Unknown error'
-                } 
-              }
-            : n
-        )
-      );
-    }
-  }, [nodes]);
+    // Note: Individual node code generation is no longer used
+    // The app now generates complete integrated applications via AI service
+    console.log('Individual node generation deprecated. Use generateWebApp() for complete app generation.');
+  }, []);
 
   const generateAllNodes = useCallback(async () => {
     const nodesWithDescriptions = nodes.filter(n => n.data.description);
@@ -447,54 +281,13 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   }, [nodes, generateNodeCode]);
 
   const exportProject = useCallback(() => {
-    const generatedNodes = nodes.filter(n => n.data.generatedCode);
-    
-    if (generatedNodes.length === 0) {
-      alert('No generated code to export. Please generate code for your nodes first.');
+    if (!generatedApp) {
+      alert('No generated app to export. Please generate an app first.');
       return;
     }
 
-    // Create HTML file with all generated components
-    const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MuxFlow Generated App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .node-section { margin: 2rem 0; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; }
-        .node-title { font-weight: bold; margin-bottom: 1rem; padding: 0.5rem; background: #f3f4f6; border-radius: 0.25rem; }
-    </style>
-</head>
-<body class="bg-gray-50 p-4">
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold text-center mb-8">Generated by MuxFlow</h1>
-        
-        ${generatedNodes.map(node => `
-        <div class="node-section">
-            <div class="node-title">${node.data.label} - ${node.data.description}</div>
-            ${node.data.generatedCode}
-        </div>
-        `).join('')}
-        
-        <script>
-            // Initialize the application
-            console.log('MuxFlow App Initialized');
-            
-            // Add any initialization code here
-            ${generatedNodes
-              .filter(n => n.data.nodeType === 'action')
-              .map(n => n.data.generatedCode)
-              .join('\n\n')
-            }
-        </script>
-    </div>
-</body>
-</html>`;
-
-    // Download the file
-    const blob = new Blob([htmlContent], { type: 'text/html' });
+    // Export the generated HTML app
+    const blob = new Blob([generatedApp], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -503,38 +296,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [nodes]);
-
-  const generateWebApp = useCallback(async () => {
-    const nodesWithCode = nodes.filter(n => n.data.generatedCode);
-    
-    if (nodesWithCode.length === 0) {
-      alert('No generated code found. Please generate code for your nodes first.');
-      return;
-    }
-
-    setIsGeneratingWebApp(true);
-    try {
-      // Use the fallback method which tries WebContainer first, then falls back to static preview
-      const previewUrl = await webAppGenerator.generateWebAppWithFallback(nodesWithCode);
-      setWebAppPreviewUrl(previewUrl);
-
-      // Try to get project info (might not be available for fallback)
-      try {
-        const project = await webAppGenerator.generateWebAppFromNodes(nodesWithCode);
-        setWebAppProject(project);
-      } catch (error) {
-        console.warn('Could not generate project info:', error);
-      }
-
-      console.log('Web app generated successfully:', previewUrl);
-    } catch (error) {
-      console.error('Error generating web app:', error);
-      alert('Error generating web app. Please try again.');
-    } finally {
-      setIsGeneratingWebApp(false);
-    }
-  }, [nodes]);
+  }, [generatedApp]);
 
   return (
     <WorkflowContext.Provider value={{
@@ -548,12 +310,12 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       hasUnsavedChanges,
       todoList,
       generatedProject,
-      webAppProject,
+      generatedApp,
+      projectFiles,
       webAppPreviewUrl,
       isGeneratingWebApp,
       analyzeWorkflow,
       generateApp,
-      generateWebApp,
       saveWorkflow,
       loadWorkflow,
       generateNodeCode,
