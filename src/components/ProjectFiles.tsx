@@ -24,14 +24,25 @@ export default function ProjectFiles() {
     URL.revokeObjectURL(url);
   };
 
-  const downloadAllFiles = () => {
+  const downloadAllFiles = async () => {
     if (!projectFiles || projectFiles.length === 0) return;
 
-    projectFiles.forEach((file, index) => {
-      setTimeout(() => {
-        downloadFile(file.name, file.content);
-      }, index * 500); // Stagger downloads
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    
+    projectFiles.forEach((file) => {
+      zip.file(file.name, file.content);
     });
+    
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'project-files.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const getFileIcon = (filename: string) => {

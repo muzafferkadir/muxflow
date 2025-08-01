@@ -156,8 +156,7 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex pt-12">
+        <div className="flex-1 flex">
           {activeTab === 'workflow' && (
             <div className="w-full h-full">
               <WorkflowEditor />
