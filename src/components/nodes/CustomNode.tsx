@@ -5,16 +5,9 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { 
   MessageSquare, 
   Zap, 
-  Database, 
   FileText, 
-  Image, 
-  Globe,
-  Settings,
-  Brain,
   Edit3,
   Trash2,
-  Play,
-  Code,
   Loader2
 } from 'lucide-react';
 import { useWorkflow } from '@/contexts/WorkflowContext';
@@ -22,7 +15,6 @@ import { useWorkflow } from '@/contexts/WorkflowContext';
 interface CustomNodeData {
   label: string;
   nodeType: string;
-  prompt?: string;
   description?: string;
   generatedCode?: string;
   isProcessing?: boolean;
@@ -43,10 +35,8 @@ const nodeColors = {
 
 function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
   const [isEditing, setIsEditing] = useState(false);
-  const [prompt, setPrompt] = useState(data.prompt || '');
   const [description, setDescription] = useState(data.description || '');
-  const [showCode, setShowCode] = useState(false);
-  const { generateNodeCode, setNodes, deleteNode } = useWorkflow();
+  const { setNodes, deleteNode } = useWorkflow();
 
   const handleDelete = useCallback(() => {
     if (window.confirm('Are you sure you want to delete this node? This action cannot be undone.')) {
@@ -61,30 +51,14 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
     // Update node data in context
     setNodes(prev => prev.map(node => 
       node.id === id 
-        ? { ...node, data: { ...node.data, prompt, description } }
+        ? { ...node, data: { ...node.data, description } }
         : node
     ));
     setIsEditing(false);
   };
 
-  const handleGenerateCode = async () => {
-    if (!description.trim()) {
-      alert('Please add a description before generating code.');
-      return;
-    }
-    
-    // Save current changes first
-    setNodes(prev => prev.map(node => 
-      node.id === id 
-        ? { ...node, data: { ...node.data, prompt, description } }
-        : node
-    ));
-    
-    await generateNodeCode(id);
-  };
-
   return (
-    <div className={`relative bg-white border-2 rounded-lg shadow-sm min-w-[200px] ${
+    <div className={`relative bg-white border-2 rounded-lg shadow-sm min-w-[200px] select-none ${
       selected ? 'border-blue-400 shadow-md' : 'border-gray-200'
     }`}>
       {/* Node Header */}
@@ -123,18 +97,10 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what this node should do..."
-                className="w-full h-16 text-xs border border-gray-300 rounded px-2 py-1 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                AI Prompt
-              </label>
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Enter detailed prompt for AI..."
-                className="w-full h-20 text-xs border border-gray-300 rounded px-2 py-1 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
+                className="w-full h-20 text-xs border border-gray-300 rounded px-2 py-1 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 select-text"
+                onMouseDown={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
+                style={{ userSelect: 'text' }}
               />
             </div>
             <div className="flex space-x-2">
@@ -155,7 +121,7 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="text-xs text-gray-600 space-y-2">
+            <div className="text-xs text-gray-600 space-y-2 select-none">
               {data.description ? (
                 <div>
                   <p className="font-medium text-gray-800 mb-1">Description:</p>
@@ -164,43 +130,13 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
               ) : (
                 <p className="text-red-500 font-medium">⚠️ Description required</p>
               )}
-              {data.prompt && (
-                <div>
-                  <p className="font-medium text-gray-800 mb-1">Prompt:</p>
-                  <p className="truncate max-w-[180px] text-gray-600">{data.prompt}</p>
-                </div>
-              )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex space-x-1">
-              <button
-                onClick={handleGenerateCode}
-                disabled={data.isProcessing || !data.description}
-                className="flex-1 flex items-center justify-center space-x-1 px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {data.isProcessing ? (
-                  <Loader2 size={10} className="animate-spin" />
-                ) : (
-                  <Play size={10} />
-                )}
-                <span>{data.isProcessing ? 'Generating...' : 'Generate'}</span>
-              </button>
-              
-              {data.generatedCode && (
-                <button
-                  onClick={() => setShowCode(!showCode)}
-                  className="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors"
-                >
-                  <Code size={10} />
-                </button>
-              )}
-            </div>
-
-            {/* Generated Code Preview */}
-            {showCode && data.generatedCode && (
-              <div className="mt-2 p-2 bg-gray-900 text-green-400 text-xs rounded font-mono max-h-32 overflow-y-auto">
-                <pre className="whitespace-pre-wrap">{data.generatedCode.substring(0, 200)}...</pre>
+            {/* Status Display */}
+            {data.isProcessing && (
+              <div className="flex items-center space-x-2 text-xs text-blue-600">
+                <Loader2 size={12} className="animate-spin" />
+                <span>Processing...</span>
               </div>
             )}
 

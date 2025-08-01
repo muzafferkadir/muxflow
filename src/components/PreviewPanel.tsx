@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Play, Settings, Eye, Code, Download, Zap } from 'lucide-react';
+import { Play, Eye, Code, Download, Zap, AlertCircle } from 'lucide-react';
 import { useWorkflow } from '@/contexts/WorkflowContext';
 
 export default function PreviewPanel() {
@@ -10,9 +10,13 @@ export default function PreviewPanel() {
   const { 
     nodes, 
     edges, 
-    isAnalyzing, 
+    isAnalyzing,
+    isGenerating,
+    hasUnsavedChanges,
+    isSaved,
     todoList, 
-    analyzeWorkflow, 
+    generatedProject,
+    analyzeWorkflow,
     generateAllNodes,
     exportProject 
   } = useWorkflow();
@@ -71,9 +75,89 @@ export default function PreviewPanel() {
       </div>
 
       {/* Preview Content */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-y-auto">
         {activeTab === 'preview' ? (
           <div className="space-y-4">
+            {/* Generated Project Preview */}
+            {generatedProject ? (
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                  <Eye size={16} className="mr-2 text-green-600" />
+                  Generated Application Preview
+                </h4>
+                <div className="space-y-3">
+                  <div className="text-sm">
+                    <span className="text-gray-600">Generated:</span>
+                    <span className="ml-2 font-medium text-green-600">
+                      {new Date(generatedProject.timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-gray-600">Components:</span>
+                    <span className="ml-2 font-medium">{generatedProject.nodes.length} nodes</span>
+                  </div>
+                  
+                  {/* Project Structure Preview */}
+                  <div className="bg-white rounded p-3 border border-gray-200">
+                    <div className="text-xs font-medium text-gray-700 mb-2">Project Structure:</div>
+                    <div className="space-y-1 text-xs font-mono">
+                      {generatedProject.nodes.map((node: any, index: number) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <span className="text-gray-400">📁</span>
+                          <span className="text-gray-800">{node.type}</span>
+                          <span className="text-gray-500">- {node.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Mock Website Preview */}
+                  <div className="bg-gray-800 rounded p-4 text-white">
+                    <div className="text-xs text-green-400 mb-2">🚀 Live Preview (Mock)</div>
+                    <div className="bg-gray-900 rounded p-3 min-h-[200px] border border-gray-700">
+                      <div className="text-center py-8">
+                        <div className="text-gray-300 mb-2">Your Generated Application</div>
+                        <div className="text-xs text-gray-500">
+                          Based on your workflow: {generatedProject.nodes.map((n: any) => n.type).join(' → ')}
+                        </div>
+                        <div className="mt-4 space-y-2">
+                          {generatedProject.nodes.map((node: any, index: number) => (
+                            <div key={index} className="bg-gray-800 rounded p-2 text-xs">
+                              <div className="font-medium text-white">{node.label}</div>
+                              <div className="text-gray-400">{node.description || 'No description'}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-6 text-center">
+                <div className="text-gray-400 mb-2">
+                  <Eye size={32} className="mx-auto" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-1">No Preview Available</h4>
+                <p className="text-sm text-gray-600">
+                  Create a workflow and click "Generate App" to see your application preview
+                </p>
+              </div>
+            )}
+
+            {/* Generation Status */}
+            {isGenerating && (
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                  <Zap size={16} className="mr-2 text-blue-600 animate-pulse" />
+                  Generating Application...
+                </h4>
+                <div className="text-sm text-gray-600">
+                  Processing your workflow and generating components...
+                </div>
+              </div>
+            )}
+
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="font-medium text-gray-900 mb-2">AI Analysis</h4>
               {todoList.length > 0 ? (
@@ -93,6 +177,36 @@ export default function PreviewPanel() {
                   Click "Analyze" to analyze your workflow and get a todo list.
                 </p>
               )}
+            </div>
+
+            {/* Workflow Status */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-medium text-gray-900 mb-2">Workflow Status</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Save Status:</span>
+                  <span className={`font-medium flex items-center space-x-1 ${
+                    isSaved ? 'text-green-600' : 'text-orange-600'
+                  }`}>
+                    <span>{isSaved ? 'Saved' : 'Unsaved Changes'}</span>
+                    {hasUnsavedChanges && <AlertCircle size={12} />}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Nodes:</span>
+                  <span className="font-medium">{nodes.length}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Connections:</span>
+                  <span className="font-medium">{edges.length}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Generation:</span>
+                  <span className={`font-medium ${isGenerating ? 'text-blue-600' : 'text-gray-600'}`}>
+                    {isGenerating ? 'In Progress...' : 'Ready'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="bg-gray-50 rounded-lg p-4">

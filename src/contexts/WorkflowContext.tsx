@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Node, Edge } from 'reactflow';
 import { aiService, AIResponse } from '@/services/aiService';
 
@@ -8,7 +8,6 @@ interface WorkflowNode extends Node {
   data: {
     label: string;
     nodeType: string;
-    prompt?: string;
     description?: string;
     generatedCode?: string;
     isProcessing?: boolean;
@@ -22,8 +21,15 @@ interface WorkflowContextType {
   setNodes: React.Dispatch<React.SetStateAction<WorkflowNode[]>>;
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
   isAnalyzing: boolean;
+  isGenerating: boolean;
+  isSaved: boolean;
+  hasUnsavedChanges: boolean;
   todoList: string[];
+  generatedProject: any;
   analyzeWorkflow: () => Promise<void>;
+  generateApp: () => Promise<void>;
+  saveWorkflow: () => void;
+  loadWorkflow: () => boolean;
   generateNodeCode: (nodeId: string) => Promise<void>;
   generateAllNodes: () => Promise<void>;
   exportProject: () => void;
@@ -36,7 +42,68 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [nodes, setNodes] = useState<WorkflowNode[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaved, setIsSaved] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [todoList, setTodoList] = useState<string[]>([]);
+  const [generatedProject, setGeneratedProject] = useState<any>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Load project from localStorage on mount
+  useEffect(() => {
+    const savedProject = localStorage.getItem('muxflow_project');
+    if (savedProject) {
+      try {
+        const projectData = JSON.parse(savedProject);
+        setGeneratedProject(projectData);
+      } catch (error) {
+        console.error('Error loading saved project:', error);
+      }
+    }
+
+    // Load workflow from localStorage on mount
+    const savedWorkflow = localStorage.getItem('muxflow_workflow');
+    if (savedWorkflow) {
+      try {
+        const workflowData = JSON.parse(savedWorkflow);
+        setNodes(workflowData.nodes || []);
+        setEdges(workflowData.edges || []);
+        setIsSaved(true);
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('Error loading saved workflow:', error);
+      }
+    } else {
+      // No saved workflow, start with empty state as saved
+      setIsSaved(true);
+      setHasUnsavedChanges(false);
+    }
+
+    // Mark initial load as complete
+    setIsInitialLoad(false);
+  }, []);
+
+  // Track changes to nodes and edges (skip initial load and empty states)
+  useEffect(() => {
+    if (!isInitialLoad && (nodes.length > 0 || edges.length > 0)) {
+      setHasUnsavedChanges(true);
+      setIsSaved(false);
+    }
+  }, [nodes, edges, isInitialLoad]);
+
+  // Prevent page unload with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return 'You have unsaved changes. Are you sure you want to leave?';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const deleteNode = useCallback((nodeId: string) => {
     // Remove the node
@@ -46,6 +113,142 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     setEdges((eds) => eds.filter(
       (edge) => edge.source !== nodeId && edge.target !== nodeId
     ));
+  }, []);
+
+  // Function to find the execution order of nodes based on their connections
+  const getNodeExecutionOrder = useCallback(() => {
+    const nodeMap = new Map(nodes.map(node => [node.id, node]));
+    const visited = new Set<string>();
+    const executionOrder: WorkflowNode[] = [];
+    
+    // Find nodes with no incoming edges (start nodes)
+    const incomingCount = new Map<string, number>();
+    nodes.forEach(node => incomingCount.set(node.id, 0));
+    edges.forEach(edge => {
+      const count = incomingCount.get(edge.target) || 0;
+      incomingCount.set(edge.target, count + 1);
+    });
+    
+    // Topological sort
+    const queue: string[] = [];
+    incomingCount.forEach((count, nodeId) => {
+      if (count === 0) queue.push(nodeId);
+    });
+    
+    while (queue.length > 0) {
+      const nodeId = queue.shift()!;
+      const node = nodeMap.get(nodeId);
+      if (node) {
+        executionOrder.push(node);
+        visited.add(nodeId);
+        
+        // Update incoming counts for connected nodes
+        edges.forEach(edge => {
+          if (edge.source === nodeId) {
+            const currentCount = incomingCount.get(edge.target) || 0;
+            const newCount = currentCount - 1;
+            incomingCount.set(edge.target, newCount);
+            if (newCount === 0 && !visited.has(edge.target)) {
+              queue.push(edge.target);
+            }
+          }
+        });
+      }
+    }
+    
+    return executionOrder;
+  }, [nodes, edges]);
+
+  const generateApp = useCallback(async () => {
+    if (nodes.length === 0) {
+      alert('Please add nodes to your workflow before generating the app.');
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    try {
+      // Get execution order
+      const executionOrder = getNodeExecutionOrder();
+      
+      // Analyze workflow requirements
+      const requirements = executionOrder.map(node => ({
+        id: node.id,
+        type: node.data.nodeType,
+        description: node.data.description || '',
+        label: node.data.label
+      }));
+
+      // Save project to localStorage
+      const projectData = {
+        nodes: requirements,
+        edges: edges,
+        timestamp: new Date().toISOString(),
+        requirements: requirements.map(req => `${req.type}: ${req.description}`).join('\n')
+      };
+      
+      localStorage.setItem('muxflow_project', JSON.stringify(projectData));
+      setGeneratedProject(projectData);
+
+      // Mark all nodes as processing
+      setNodes(prev => prev.map(node => ({
+        ...node,
+        data: { ...node.data, isProcessing: true, error: '' }
+      })));
+
+      // Generate code for each node in order
+      for (const node of executionOrder) {
+        await generateNodeCode(node.id);
+      }
+
+      alert('App generation completed! Check the preview panel.');
+      
+    } catch (error) {
+      console.error('Error generating app:', error);
+      alert('Error generating app. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [nodes, edges, getNodeExecutionOrder]);
+
+  const saveWorkflow = useCallback(() => {
+    try {
+      const workflowData = {
+        nodes: nodes,
+        edges: edges,
+        timestamp: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      localStorage.setItem('muxflow_workflow', JSON.stringify(workflowData));
+      setIsSaved(true);
+      setHasUnsavedChanges(false);
+      
+      // Success feedback
+      console.log('Workflow saved successfully at', new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+      alert('Error saving workflow. Please try again.');
+    }
+  }, [nodes, edges]);
+
+  const loadWorkflow = useCallback(() => {
+    try {
+      const savedWorkflow = localStorage.getItem('muxflow_workflow');
+      if (savedWorkflow) {
+        const workflowData = JSON.parse(savedWorkflow);
+        setNodes(workflowData.nodes || []);
+        setEdges(workflowData.edges || []);
+        setIsSaved(true);
+        setHasUnsavedChanges(false);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error loading workflow:', error);
+      alert('Error loading workflow.');
+      return false;
+    }
   }, []);
 
   const analyzeWorkflow = useCallback(async () => {
@@ -102,19 +305,19 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
         case 'input':
           response = await aiService.generateInputForm(
             node.data.description, 
-            node.data.prompt || ''
+            node.data.description || ''
           );
           break;
         case 'show':
           response = await aiService.generateDisplayPage(
             node.data.description, 
-            node.data.prompt || ''
+            node.data.description || ''
           );
           break;
         case 'action':
           response = await aiService.generateActionFunction(
             node.data.description, 
-            node.data.prompt || ''
+            node.data.description || ''
           );
           break;
         default:
@@ -236,8 +439,15 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       setNodes,
       setEdges,
       isAnalyzing,
+      isGenerating,
+      isSaved,
+      hasUnsavedChanges,
       todoList,
+      generatedProject,
       analyzeWorkflow,
+      generateApp,
+      saveWorkflow,
+      loadWorkflow,
       generateNodeCode,
       generateAllNodes,
       exportProject,
