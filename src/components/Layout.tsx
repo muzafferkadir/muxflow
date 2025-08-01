@@ -52,7 +52,7 @@ export default function Layout() {
   }
 
   return (
-    <main className="h-screen w-screen bg-gray-50">
+    <main className="h-screen w-screen min-w-[1080px] bg-gray-50">
       <div className="h-full flex flex-col">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
@@ -121,7 +121,7 @@ export default function Layout() {
         </header>
 
         {/* Tab Navigation - N8n Style Centered */}
-        <div className="absolute top-[68px] left-1/2 transform -translate-x-1/2 z-10">
+        <div className="absolute top-[52px] left-1/2 transform -translate-x-1/2 z-10">
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex">
             <button
               onClick={() => setActiveTab('workflow')}
