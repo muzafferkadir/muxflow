@@ -26,7 +26,7 @@ const nodeTypes = {
 };
 
 export default function WorkflowEditor() {
-  const { nodes, edges, setNodes, setEdges, deleteNode } = useWorkflow();
+  const { nodes, edges, setNodes, setEdges, deleteNode, generateNodeCode } = useWorkflow();
   
   const onNodesChange = useCallback((changes: any) => {
     setNodes((nds) => {
@@ -93,7 +93,7 @@ export default function WorkflowEditor() {
     });
   }, [onEdgesChange, setEdges]);
 
-  const handleAddNode = useCallback((nodeData: any) => {
+  const handleAddNode = useCallback(async (nodeData: any) => {
     const newNode = {
       id: `node_${Date.now()}`,
       type: 'custom',
@@ -111,7 +111,15 @@ export default function WorkflowEditor() {
     };
 
     setNodes((nds) => [...nds, newNode]);
-  }, [setNodes]);
+    
+    // Auto-generate code if description is provided
+    if (nodeData.description && nodeData.description.trim()) {
+      // Wait a bit for the node to be added to the state
+      setTimeout(() => {
+        generateNodeCode(newNode.id);
+      }, 100);
+    }
+  }, [setNodes, generateNodeCode]);
 
   return (
     <div className="h-full flex relative">

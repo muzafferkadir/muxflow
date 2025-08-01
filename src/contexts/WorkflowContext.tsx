@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Node, Edge } from 'reactflow';
 import { aiService, AIResponse } from '@/services/aiService';
+import { webAppGenerator, WebAppProject } from '@/services/webAppGenerator';
 
 interface WorkflowNode extends Node {
   data: {
@@ -26,8 +27,12 @@ interface WorkflowContextType {
   hasUnsavedChanges: boolean;
   todoList: string[];
   generatedProject: any;
+  webAppProject: WebAppProject | null;
+  webAppPreviewUrl: string | null;
+  isGeneratingWebApp: boolean;
   analyzeWorkflow: () => Promise<void>;
   generateApp: () => Promise<void>;
+  generateWebApp: () => Promise<void>;
   saveWorkflow: () => void;
   loadWorkflow: () => boolean;
   generateNodeCode: (nodeId: string) => Promise<void>;
@@ -48,6 +53,9 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [todoList, setTodoList] = useState<string[]>([]);
   const [generatedProject, setGeneratedProject] = useState<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [webAppProject, setWebAppProject] = useState<WebAppProject | null>(null);
+  const [webAppPreviewUrl, setWebAppPreviewUrl] = useState<string | null>(null);
+  const [isGeneratingWebApp, setIsGeneratingWebApp] = useState(false);
 
   // Load project from localStorage on mount
   useEffect(() => {
@@ -74,7 +82,65 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
         console.error('Error loading saved workflow:', error);
       }
     } else {
-      // No saved workflow, start with empty state as saved
+      // No saved workflow, start with an example workflow
+      const exampleNodes = [
+        {
+          id: 'node_1',
+          type: 'custom',
+          position: { x: 300, y: 550 },
+          data: {
+            label: 'Task Input',
+            nodeType: 'input',
+            prompt: 'Create a form to add tasks to a to-do list.',
+            description: 'A form to input task names.',
+            generatedCode: '',
+            isProcessing: false,
+            error: '',
+          },
+          width: 300,
+          height: 100,
+        },
+        {
+          id: 'node_2',
+          type: 'custom',
+          position: { x: 550, y: 400 },
+          data: {
+            label: 'Add Task',
+            nodeType: 'action',
+            prompt: 'Create a function to add tasks to a list.',
+            description: 'A function to handle adding tasks to the to-do list.',
+            generatedCode: '',
+            isProcessing: false,
+            error: '',
+          },
+          width: 300,
+          height: 100,
+        },
+        {
+          id: 'node_3',
+          type: 'custom',
+          position: { x: 900, y: 250 },
+          data: {
+            label: 'Task List',
+            nodeType: 'show',
+            prompt: 'Create a page to display the to-do list.',
+            description: 'A page to show all tasks in the to-do list.',
+            generatedCode: '',
+            isProcessing: false,
+            error: '',
+          },
+          width: 300,
+          height: 100,
+        },
+      ];
+
+      const exampleEdges = [
+        { id: 'e1-2', source: 'node_1', target: 'node_2', type: 'default' },
+        { id: 'e2-3', source: 'node_2', target: 'node_3', type: 'default' },
+      ];
+
+      setNodes(exampleNodes);
+      setEdges(exampleEdges);
       setIsSaved(true);
       setHasUnsavedChanges(false);
     }
@@ -439,6 +505,37 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     URL.revokeObjectURL(url);
   }, [nodes]);
 
+  const generateWebApp = useCallback(async () => {
+    const nodesWithCode = nodes.filter(n => n.data.generatedCode);
+    
+    if (nodesWithCode.length === 0) {
+      alert('No generated code found. Please generate code for your nodes first.');
+      return;
+    }
+
+    setIsGeneratingWebApp(true);
+    try {
+      // Use the fallback method which tries WebContainer first, then falls back to static preview
+      const previewUrl = await webAppGenerator.generateWebAppWithFallback(nodesWithCode);
+      setWebAppPreviewUrl(previewUrl);
+
+      // Try to get project info (might not be available for fallback)
+      try {
+        const project = await webAppGenerator.generateWebAppFromNodes(nodesWithCode);
+        setWebAppProject(project);
+      } catch (error) {
+        console.warn('Could not generate project info:', error);
+      }
+
+      console.log('Web app generated successfully:', previewUrl);
+    } catch (error) {
+      console.error('Error generating web app:', error);
+      alert('Error generating web app. Please try again.');
+    } finally {
+      setIsGeneratingWebApp(false);
+    }
+  }, [nodes]);
+
   return (
     <WorkflowContext.Provider value={{
       nodes,
@@ -451,8 +548,12 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       hasUnsavedChanges,
       todoList,
       generatedProject,
+      webAppProject,
+      webAppPreviewUrl,
+      isGeneratingWebApp,
       analyzeWorkflow,
       generateApp,
+      generateWebApp,
       saveWorkflow,
       loadWorkflow,
       generateNodeCode,

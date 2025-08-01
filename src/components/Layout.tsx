@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import WorkflowEditor from '@/components/WorkflowEditor';
 import PreviewPanel from '@/components/PreviewPanel';
 import { useWorkflow } from '@/contexts/WorkflowContext';
-import { Save, Play, Loader2, AlertCircle, Download } from 'lucide-react';
+import { Save, Globe, Loader2, AlertCircle, Download } from 'lucide-react';
 
 export default function Layout() {
   const [mounted, setMounted] = React.useState(false);
@@ -13,15 +13,16 @@ export default function Layout() {
   const { 
     nodes,
     saveWorkflow, 
-    generateApp, 
+    generateWebApp, 
     exportProject,
     hasUnsavedChanges,
     isSaved,
-    isGenerating 
+    isGeneratingWebApp 
   } = useWorkflow();
 
-  // Check if all nodes have descriptions
+  // Check if all nodes have descriptions and generated code
   const allNodesHaveDescriptions = nodes.length > 0 && nodes.every(node => node.data.description?.trim());
+  const allNodesHaveCode = nodes.length > 0 && nodes.every(node => node.data.generatedCode?.trim());
   const nodesWithoutDescription = nodes.filter(node => !node.data.description?.trim()).length;
 
   React.useEffect(() => {
@@ -78,30 +79,35 @@ export default function Layout() {
               <span className="text-xs opacity-75">(Ctrl+S)</span>
             </button>
 
-            {/* Generate App Button */}
+            {/* Generate Web App Button */}
             <button 
-              onClick={generateApp}
-              disabled={isGenerating || nodes.length === 0 || !allNodesHaveDescriptions}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              onClick={generateWebApp}
+              disabled={isGeneratingWebApp || nodes.length === 0 || !allNodesHaveCode || !isSaved}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               title={
                 nodes.length === 0 
                   ? "Add nodes to your workflow" 
-                  : !allNodesHaveDescriptions 
-                    ? `${nodesWithoutDescription} node(s) missing description`
-                    : "Generate your application"
+                  : !isSaved
+                    ? "Save workflow first"
+                  : !allNodesHaveCode 
+                    ? "Generate code for all nodes first"
+                    : "Generate live web application"
               }
             >
-              {isGenerating ? (
+              {isGeneratingWebApp ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
                   <span>Generating...</span>
                 </>
               ) : (
                 <>
-                  <Play size={16} />
-                  <span>Generate App</span>
-                  {!allNodesHaveDescriptions && nodes.length > 0 && (
-                    <span className="text-xs opacity-75">({nodesWithoutDescription} missing desc.)</span>
+                  <Globe size={16} />
+                  <span>Generate Web App</span>
+                  {!isSaved && nodes.length > 0 && (
+                    <span className="text-xs opacity-75">(Save first)</span>
+                  )}
+                  {!allNodesHaveCode && nodes.length > 0 && isSaved && (
+                    <span className="text-xs opacity-75">(Generate code first)</span>
                   )}
                 </>
               )}
