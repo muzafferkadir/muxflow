@@ -92,7 +92,7 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <IconComponent size={16} />
-            <span className="font-medium text-sm">{data.label}</span>
+            <span className="font-semibold text-sm">{data.label}</span>
           </div>
           <div className="flex items-center space-x-1">
             <button

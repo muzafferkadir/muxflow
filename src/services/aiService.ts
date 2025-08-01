@@ -35,7 +35,7 @@ export class AIService {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'https://muxflow.dev',
-          'X-Title': 'MuxFlow AI Workflow Builder'
+          'X-Title': 'MuxFlow Workflow App Builder'
         },
         body: JSON.stringify({
           model: model || this.defaultModel,
