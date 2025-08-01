@@ -26,7 +26,6 @@ export default function PreviewPanel() {
 
   return (
     <div className="h-full bg-white flex flex-col overflow-hidden">
-      {/* Simple Header - only when app is generated */}
       {generatedApp && (
         <div className="p-2 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
@@ -56,10 +55,8 @@ export default function PreviewPanel() {
         </div>
       )}
 
-      {/* Preview Content */}
       <div className="flex-1 overflow-hidden">
         {generatedApp ? (
-          // Direct application view using srcdoc (no blob URL)
           <iframe 
             srcDoc={generatedApp}
             className="w-full h-full border-0"
@@ -67,7 +64,6 @@ export default function PreviewPanel() {
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           />
         ) : isGeneratingWebApp ? (
-          // Simple loading state
           <div className="h-full flex items-center justify-center bg-gray-50">
             <div className="text-center">
               <Globe size={32} className="mx-auto animate-pulse text-purple-600 mb-3" />
@@ -75,7 +71,6 @@ export default function PreviewPanel() {
             </div>
           </div>
         ) : totalNodes > 0 ? (
-          // Ready state
           <div className="h-full flex items-center justify-center bg-gray-50">
             <div className="text-center">
               <Globe size={32} className="mx-auto text-gray-400 mb-3" />
@@ -84,7 +79,6 @@ export default function PreviewPanel() {
             </div>
           </div>
         ) : (
-          // Empty state
           <div className="h-full flex items-center justify-center bg-gray-50">
             <div className="text-center">
               <Globe size={32} className="mx-auto text-gray-400 mb-3" />

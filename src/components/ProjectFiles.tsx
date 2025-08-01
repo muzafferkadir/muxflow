@@ -27,7 +27,6 @@ export default function ProjectFiles() {
   const downloadAllFiles = () => {
     if (!projectFiles || projectFiles.length === 0) return;
 
-    // Create a zip-like structure by downloading each file
     projectFiles.forEach((file, index) => {
       setTimeout(() => {
         downloadFile(file.name, file.content);
@@ -57,7 +56,6 @@ export default function ProjectFiles() {
 
   return (
     <div className="h-full bg-white flex flex-col">
-      {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -81,11 +79,9 @@ export default function ProjectFiles() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-hidden">
         {projectFiles && projectFiles.length > 0 ? (
           <div className="h-full flex">
-            {/* File Tree */}
             <div className="w-80 border-r border-gray-200 bg-gray-50">
               <div className="p-4">
                 <div className="text-sm font-medium text-gray-700 mb-3">Project Structure</div>
@@ -114,7 +110,6 @@ export default function ProjectFiles() {
               </div>
             </div>
 
-            {/* File Preview */}
             <div className="flex-1 flex flex-col">
               <div className="p-4 border-b border-gray-200 bg-gray-50">
                 <div className="text-sm text-gray-600">
@@ -151,7 +146,6 @@ export default function ProjectFiles() {
             </div>
           </div>
         ) : (
-          // Empty state
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
               <FolderOpen size={48} className="mx-auto text-gray-400 mb-4" />

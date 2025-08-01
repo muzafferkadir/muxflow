@@ -15,7 +15,6 @@ export default function Layout() {
     nodes,
     saveWorkflow, 
     generateApp,
-    exportProject,
     hasUnsavedChanges,
     isSaved,
     isGeneratingWebApp

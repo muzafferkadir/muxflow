@@ -8,13 +8,9 @@ import {
   Background,
   addEdge,
   Connection,
-  Edge,
   BackgroundVariant,
-  Node,
   applyNodeChanges,
   applyEdgeChanges,
-  NodeChange,
-  EdgeChange
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import NodeToolbar from './NodeToolbar';
@@ -26,7 +22,7 @@ const nodeTypes = {
 };
 
 export default function WorkflowEditor() {
-  const { nodes, edges, setNodes, setEdges, deleteNode, generateNodeCode } = useWorkflow();
+  const { nodes, edges, setNodes, setEdges, deleteNode } = useWorkflow();
   
   const onNodesChange = useCallback((changes: any) => {
     setNodes((nds) => {
@@ -44,54 +40,6 @@ export default function WorkflowEditor() {
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
-
-  const handleNodesChange = useCallback((changes: any) => {
-    onNodesChange(changes);
-    // Apply changes to our context state
-    setNodes((nds) => {
-      const updatedNodes = [...nds];
-      changes.forEach((change: any) => {
-        const nodeIndex = updatedNodes.findIndex(n => n.id === change.id);
-        if (nodeIndex !== -1) {
-          switch (change.type) {
-            case 'position':
-              if (change.position) {
-                updatedNodes[nodeIndex] = {
-                  ...updatedNodes[nodeIndex],
-                  position: change.position
-                };
-              }
-              break;
-            case 'remove':
-              updatedNodes.splice(nodeIndex, 1);
-              break;
-            case 'select':
-              updatedNodes[nodeIndex] = {
-                ...updatedNodes[nodeIndex],
-                selected: change.selected
-              };
-              break;
-          }
-        }
-      });
-      return updatedNodes;
-    });
-  }, [onNodesChange, setNodes]);
-
-  const handleEdgesChange = useCallback((changes: any) => {
-    onEdgesChange(changes);
-    // Apply changes to our context state
-    setEdges((eds) => {
-      const updatedEdges = [...eds];
-      changes.forEach((change: any) => {
-        const edgeIndex = updatedEdges.findIndex(e => e.id === change.id);
-        if (edgeIndex !== -1 && change.type === 'remove') {
-          updatedEdges.splice(edgeIndex, 1);
-        }
-      });
-      return updatedEdges;
-    });
-  }, [onEdgesChange, setEdges]);
 
   const handleAddNode = useCallback(async (nodeData: any) => {
     const newNode = {
@@ -112,23 +60,14 @@ export default function WorkflowEditor() {
 
     setNodes((nds) => [...nds, newNode]);
     
-    // Auto-generate code if description is provided
-    if (nodeData.description && nodeData.description.trim()) {
-      // Wait a bit for the node to be added to the state
-      setTimeout(() => {
-        generateNodeCode(newNode.id);
-      }, 100);
-    }
-  }, [setNodes, generateNodeCode]);
+  }, [setNodes]);
 
   return (
     <div className="h-full flex relative">
-      {/* Node Toolbar - Absolute positioned */}
       <div className="absolute left-4 top-12 w-64 bg-white border border-gray-200 rounded-lg shadow-sm z-10">
         <NodeToolbar onAddNode={handleAddNode} />
       </div>
 
-      {/* Flow Canvas - Full width */}
       <div className="w-full h-full">
         <ReactFlow
           nodes={nodes}

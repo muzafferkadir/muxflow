@@ -31,12 +31,9 @@ interface WorkflowContextType {
   projectFiles: ProjectFile[] | null;
   webAppPreviewUrl: string | null;
   isGeneratingWebApp: boolean;
-  analyzeWorkflow: () => Promise<void>;
   generateApp: () => Promise<void>;
   saveWorkflow: () => void;
   loadWorkflow: () => boolean;
-  generateNodeCode: (nodeId: string) => Promise<void>;
-  generateAllNodes: () => Promise<void>;
   exportProject: () => void;
   deleteNode: (nodeId: string) => void;
 }
@@ -84,11 +81,9 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Mark initial load as complete
-    setIsInitialLoad(false);
+    setIsInitialLoad(true);
   }, []);
 
-  // Track changes to nodes and edges (skip initial load and empty states)
   useEffect(() => {
     if (!isInitialLoad && (nodes.length > 0 || edges.length > 0)) {
       setHasUnsavedChanges(true);
@@ -96,7 +91,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     }
   }, [nodes, edges, isInitialLoad]);
 
-  // Prevent page unload with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
@@ -111,10 +105,8 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   }, [hasUnsavedChanges]);
 
   const deleteNode = useCallback((nodeId: string) => {
-    // Remove the node
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
     
-    // Remove any connected edges
     setEdges((eds) => eds.filter(
       (edge) => edge.source !== nodeId && edge.target !== nodeId
     ));
@@ -126,7 +118,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     const visited = new Set<string>();
     const executionOrder: WorkflowNode[] = [];
     
-    // Find nodes with no incoming edges (start nodes)
     const incomingCount = new Map<string, number>();
     nodes.forEach(node => incomingCount.set(node.id, 0));
     edges.forEach(edge => {
@@ -134,7 +125,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       incomingCount.set(edge.target, count + 1);
     });
     
-    // Topological sort
     const queue: string[] = [];
     incomingCount.forEach((count, nodeId) => {
       if (count === 0) queue.push(nodeId);
@@ -147,7 +137,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
         executionOrder.push(node);
         visited.add(nodeId);
         
-        // Update incoming counts for connected nodes
         edges.forEach(edge => {
           if (edge.source === nodeId) {
             const currentCount = incomingCount.get(edge.target) || 0;
@@ -170,7 +159,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Check if all nodes have descriptions
     const nodesWithoutDescription = nodes.filter(node => !node.data.description?.trim());
     if (nodesWithoutDescription.length > 0) {
       alert(`${nodesWithoutDescription.length} node(s) are missing descriptions. Please add descriptions to all nodes before generating the app.`);
@@ -191,11 +179,9 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('muxflow_project', JSON.stringify(projectData));
       setGeneratedProject(projectData);
 
-      // Generate both HTML and project files
       const result = await webAppGenerator.generateFromWorkflow(nodes, edges);
       
       if (result.success) {
-        // Set both HTML content and project files
         if (result.htmlContent) {
           setGeneratedApp(result.htmlContent);
         }
@@ -229,10 +215,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('muxflow_workflow', JSON.stringify(workflowData));
       setIsSaved(true);
       setHasUnsavedChanges(false);
-      
-      // Success feedback
-      console.log('Workflow saved successfully at', new Date().toLocaleTimeString());
-    } catch (error) {
+      } catch (error) {
       console.error('Error saving workflow:', error);
       alert('Error saving workflow. Please try again.');
     }
@@ -257,28 +240,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const analyzeWorkflow = useCallback(async () => {
-    // Note: Workflow analysis feature deprecated
-    // AI service now directly generates complete apps from workflow
-    console.log('Workflow analysis deprecated. Use generateWebApp() for complete app generation.');
-    setTodoList(['Use "Generate App" to create your complete application']);
-  }, []);
-
-  const generateNodeCode = useCallback(async (nodeId: string) => {
-    // Note: Individual node code generation is no longer used
-    // The app now generates complete integrated applications via AI service
-    console.log('Individual node generation deprecated. Use generateWebApp() for complete app generation.');
-  }, []);
-
-  const generateAllNodes = useCallback(async () => {
-    const nodesWithDescriptions = nodes.filter(n => n.data.description);
-    
-    for (const node of nodesWithDescriptions) {
-      await generateNodeCode(node.id);
-      // Add a small delay between requests to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-  }, [nodes, generateNodeCode]);
 
   const exportProject = useCallback(() => {
     if (!generatedApp) {
@@ -286,7 +247,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Export the generated HTML app
     const blob = new Blob([generatedApp], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -314,12 +274,9 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       projectFiles,
       webAppPreviewUrl,
       isGeneratingWebApp,
-      analyzeWorkflow,
       generateApp,
       saveWorkflow,
       loadWorkflow,
-      generateNodeCode,
-      generateAllNodes,
       exportProject,
       deleteNode
     }}>

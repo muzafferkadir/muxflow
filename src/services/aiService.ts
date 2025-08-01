@@ -34,14 +34,14 @@ export class AIService {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://muxflow.dev',
+          'HTTP-Referer': 'https://mkdir.dev',
           'X-Title': 'MuxFlow Workflow App Builder'
         },
         body: JSON.stringify({
           model: model || this.defaultModel,
           messages,
-          temperature: 0.7,
-          max_tokens: 2000,
+          temperature: 0.6,
+          max_tokens: 20000,
           stream: false
         })
       });
@@ -69,7 +69,6 @@ export class AIService {
     }
   }
 
-  // Analyze workflow and generate integrated web application
   async generateIntegratedWebApp(nodes: any[]): Promise<AIResponse> {
     const inputNodes = nodes.filter(n => n.data.nodeType === 'input');
     const actionNodes = nodes.filter(n => n.data.nodeType === 'action');
@@ -136,7 +135,6 @@ CRITICAL: Return only the raw HTML code with inline CSS and JavaScript. No exter
     return this.generateContent(messages);
   }
 
-  // Generate complete project structure with multiple files
   async generateProjectStructure(nodes: any[]): Promise<AIResponse> {
     const inputNodes = nodes.filter(n => n.data.nodeType === 'input');
     const actionNodes = nodes.filter(n => n.data.nodeType === 'action');
@@ -226,7 +224,6 @@ CRITICAL: Return only a JSON object with the file structure. No explanations or 
       description += "\n";
     }
 
-    // Add workflow logic inference
     description += "WORKFLOW LOGIC:\n";
     description += "The application should connect these components in a logical flow:\n";
     description += "1. Collect input from users\n";
@@ -237,7 +234,6 @@ CRITICAL: Return only a JSON object with the file structure. No explanations or 
     return description;
   }
 
-  // Analyze workflow and create todo list
   async analyzeWorkflow(nodes: any[], edges: any[]): Promise<AIResponse> {
     const messages: AIMessage[] = [
       {
@@ -271,5 +267,4 @@ Create a todo list for implementing this workflow as a browser-based SPA.`
   }
 }
 
-// Export singleton instance
 export const aiService = new AIService();
