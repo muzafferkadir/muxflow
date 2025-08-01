@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Download, File, Folder, FolderOpen } from 'lucide-react';
+import { Download, Folder, FolderOpen } from 'lucide-react';
 import { useWorkflow } from '@/contexts/WorkflowContext';
 
 export default function ProjectFiles() {
@@ -113,7 +113,7 @@ export default function ProjectFiles() {
             <div className="flex-1 flex flex-col">
               <div className="p-4 border-b border-gray-200 bg-gray-50">
                 <div className="text-sm text-gray-600">
-                  Click on any file to download it, or use "Download All" to get the complete project.
+                  Click on any file to download it, or use &quot;Download All&quot; to get the complete project.
                 </div>
               </div>
               
@@ -154,7 +154,7 @@ export default function ProjectFiles() {
                 Generate a project structure first to see your files here.
               </p>
               <div className="text-sm text-gray-400">
-                Use the "Generate Project" button in the header to create a complete project with separate HTML, CSS, and JS files.
+                Use the &quot;Generate Project&quot; button in the header to create a complete project with separate HTML, CSS, and JS files.
               </div>
             </div>
           </div>

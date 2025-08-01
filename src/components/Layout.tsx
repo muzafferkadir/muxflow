@@ -5,7 +5,7 @@ import WorkflowEditor from '@/components/WorkflowEditor';
 import PreviewPanel from '@/components/PreviewPanel';
 import ProjectFiles from '@/components/ProjectFiles';
 import { useWorkflow } from '@/contexts/WorkflowContext';
-import { Save, Globe, Loader2, AlertCircle, Download } from 'lucide-react';
+import { Save, Globe, Loader2, AlertCircle } from 'lucide-react';
 
 export default function Layout() {
   const [mounted, setMounted] = React.useState(false);

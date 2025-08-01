@@ -4,12 +4,7 @@ import React from 'react';
 import { 
   MessageSquare, 
   Zap, 
-  Database, 
   FileText, 
-  Image, 
-  Globe,
-  Settings,
-  Brain
 } from 'lucide-react';
 
 interface NodeData {

@@ -81,7 +81,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    setIsInitialLoad(true);
+    setIsInitialLoad(false);
   }, []);
 
   useEffect(() => {
