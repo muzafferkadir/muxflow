@@ -1,93 +1,91 @@
 # MuxFlow
 
-**Open-source library for building AI workflow applications, inspired by Google Opal**
+**Build AI-Powered Micro Apps with Visual Workflows**
 
-MuxFlow, Google Opal'dan ilham alan ve AI destekli mini uygulamalar oluşturmaya yönelik açık kaynak bir workflow builder'dır. Prompt'ları, AI modellerini ve araçları birbirine bağlayarak güçlü iş akışları oluşturmanıza olanak tanır.
+MuxFlow is an open-source workflow builder for creating AI-powered micro applications, inspired by Google Opal. Connect prompts, AI models, and tools to create powerful, interactive workflows that can be deployed as standalone applications.
 
-## 🌟 Özellikler
+## ✨ Features
 
-- **Visual Workflow Editor**: N8N benzeri drag-and-drop arayüzü
-- **AI Node Support**: AI prompt, transformation ve processing node'ları
-- **Real-time Preview**: Workflow'unuzun gerçek zamanlı önizlemesi
-- **Modern UI/UX**: Tailwind CSS ile modern ve responsive tasarım
-- **TypeScript**: Tip güvenliği için tam TypeScript desteği
-- **React Flow**: Güçlü workflow visualization engine
+- **Visual Workflow Editor**: Intuitive drag-and-drop interface similar to n8n
+- **AI-First Design**: Integrated AI nodes for prompts, transformations, and processing
+- **Live Preview**: Real-time preview of your micro apps as you build
+- **Component Library**: AI-generated UI components that adapt to your needs
+- **Modern Stack**: Built with Next.js, TypeScript, and Tailwind CSS
+- **React Flow Engine**: Robust workflow visualization and management
 
-## 🚀 Kurulum
+## 🚀 Getting Started
 
 ```bash
-# Projeyi klonlayın
+# Clone the repository
 git clone https://github.com/user/muxflow.git
 cd muxflow
 
-# Bağımlılıkları yükleyin
+# Install dependencies
 npm install
 
-# Development server'ı başlatın
+# Start the development server
 npm run dev
 ```
 
-Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açın.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 📋 Kullanım
+## 📋 Usage Guide
 
-### Temel Workflow Oluşturma
+### Basic Workflow Creation
 
-1. **Sol panel**: Farklı node tiplerini içeren toolbar
-2. **Ana canvas**: Workflow'unuzu oluşturacağınız alan
-3. **Sağ panel**: Workflow preview ve kod görünümü
+1. **Left Panel**: Toolbar containing different node types
+2. **Main Canvas**: Area where you build your workflow
+3. **Right Panel**: Workflow preview and code view
 
-### Node Tipleri
+### Node Types
 
-- **Input Node**: AI tarafından tasarlanan form componentleri (text, select, checkbox vb.) - Veriler localStorage'de saklanır
-- **Show/Display Node**: İçerik görüntüleme sayfaları - AI prompta göre sayfa tasarımı yapar
-- **Action Node**: İşlem yapma node'u - Fonksiyonlar, hesaplamalar, client-side API istekleri
+- **Input Node**: AI-designed form components (text, select, checkbox, etc.) - Data stored in localStorage
+- **Show/Display Node**: Content display pages - AI generates page layout based on prompts
+- **Action Node**: Processing node - Functions, calculations, client-side API requests
 
-### Node Ekleme
+### Adding Nodes
 
-Node'ları iki şekilde ekleyebilirsiniz:
-1. Sol paneldeki node'a tıklayarak
-2. Node'u sürükleyip canvas'a bırakarak
+You can add nodes in two ways:
+1. Click on a node in the left panel
+2. Drag and drop a node from the panel to the canvas
 
-### AI Agent Sistemi
+### AI Agent System
 
-MuxFlow'da workflow'unuzu oluşturduktan sonra:
+After creating your workflow in MuxFlow:
 
-1. **Description Zorunluluğu**: Her node için açıklayıcı bir description girin
-2. **AI Analysis**: Yapay zeka workflow'unuzu analiz eder ve todo listesi oluşturur
-3. **Sequential Execution**: AI, görevleri sırayla gerçekleştirir
-4. **Browser-Only**: Sadece client-side teknolojiler kullanır (HTML, CSS, JS)
-5. **Static Export**: Sonuç olarak deploy edilebilir statik dosyalar üretir
+1. **Required Description**: Enter a descriptive explanation for each node
+2. **AI Analysis**: Artificial intelligence analyzes your workflow and creates a todo list
+3. **Sequential Execution**: AI executes tasks in sequence
+4. **Browser-Only**: Uses only client-side technologies (HTML, CSS, JS)
+5. **Static Export**: Produces deployable static files as output
 
 ### AI Integration (OpenRouter)
 
-MuxFlow, OpenRouter API üzerinden Google Gemini Flash 1.5 modelini kullanır:
+MuxFlow uses the Google Gemini Flash 1.5 model via OpenRouter API:
 
-1. **API Configuration**: `.env.local` dosyasında OpenRouter token'ınızı tanımlayın
-2. **Node Generation**: Her node türü için optimize edilmiş AI prompts
-3. **Code Generation**: HTML, CSS, JavaScript kod üretimi
-4. **Error Handling**: API hatalarını yakalama ve kullanıcıya bildirim
-5. **Export System**: Tüm generated code'u tek HTML dosyasında birleştirme
+1. **API Configuration**: Set your OpenRouter token in the `.env.local` file
+2. **Node Generation**: Optimized AI prompts for each node type
+3. **Code Generation**: HTML, CSS, JavaScript code generation
+4. **Error Handling**: Catch API errors and notify users
+5. **Export System**: Combine all generated code into a single HTML file
 
-#### Kurulum
+#### Setup
 ```bash
-# .env.local dosyası oluşturun
+# Create .env.local file
 NEXT_PUBLIC_OPENROUTER_API_KEY=your-openrouter-token-here
 NEXT_PUBLIC_DEFAULT_MODEL=google/gemini-flash-1.5
 ```
 
-### Kısıtlamalar ve Odak
+### Limitations and Focus
 
-- ❌ Server-side işlemler (database, backend API'ler)
-- ❌ Karmaşık authentication sistemleri
-- ✅ localStorage ile veri saklama
-- ✅ Client-side API istekleri
-- ✅ SPA (Single Page Application) yaklaşımı
-- ✅ Hızlı deployment için statik dosyalar
+- ❌ Server-side operations (databases, backend APIs)
+- ❌ Complex authentication systems
+- ✅ Data storage with localStorage
+- ✅ Client-side API requests
+- ✅ SPA (Single Page Application) approach
+- ✅ Static files for quick deployment
 
-## 🎯 Google Opal ile Benzerlikler
-
-MuxFlow, [Google Opal](https://developers.googleblog.com/en/introducing-opal/)'ın temel özelliklerini açık kaynak olarak sunar:
+## 🎯 Inspired by Google Opal
 
 - ✅ Visual workflow creation
 - ✅ AI-powered processing steps
@@ -95,7 +93,7 @@ MuxFlow, [Google Opal](https://developers.googleblog.com/en/introducing-opal/)'�
 - ✅ Real-time preview
 - ✅ Shareable workflows
 
-## 🛠 Teknoloji Stack
+## 🛠 Technology Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
@@ -104,35 +102,35 @@ MuxFlow, [Google Opal](https://developers.googleblog.com/en/introducing-opal/)'�
 - **Icons**: Lucide React
 - **UI Components**: Custom React components
 
-## 📁 Proje Yapısı
+## 📁 Project Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx          # Ana sayfa
+│   ├── page.tsx          # Main page
 │   └── layout.tsx        # Root layout
 ├── components/
-│   ├── WorkflowEditor.tsx    # Ana workflow editörü
-│   ├── PreviewPanel.tsx      # Preview paneli
+│   ├── WorkflowEditor.tsx    # Main workflow editor
+│   ├── PreviewPanel.tsx      # Preview panel
 │   ├── NodeToolbar.tsx       # Node toolbar
 │   └── nodes/
 │       └── CustomNode.tsx    # Custom node component
 └── ...
 ```
 
-## 🤝 Katkıda Bulunma
+## 🤝 Contributing
 
-1. Fork edin
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Commit edin (`git commit -m 'Add some amazing feature'`)
-4. Push edin (`git push origin feature/amazing-feature`)
-5. Pull Request açın
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📄 Lisans
+## 📄 License
 
-Bu proje MIT lisansı altında lisanslanmıştır.
+This project is licensed under the MIT License.
 
-## 🔗 Bağlantılar
+## 🔗 Links
 
 - [Google Opal Blog Post](https://developers.googleblog.com/en/introducing-opal/)
 - [React Flow Documentation](https://reactflow.dev/)
@@ -140,4 +138,4 @@ Bu proje MIT lisansı altında lisanslanmıştır.
 
 ---
 
-**MuxFlow** - AI workflow'larınızı görselleştirin ve otomatikleştirin!
+**MuxFlow** - Visualize and automate your AI workflows!

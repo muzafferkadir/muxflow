@@ -23,7 +23,7 @@ export default function Layout() {
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-bold text-gray-900">MuxFlow</h1>
-            <span className="text-sm text-gray-500">AI Workflow Builder</span>
+            <span className="text-sm text-gray-500">AI Micro App Builder</span>
           </div>
           <div className="flex items-center space-x-3">
             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
@@ -68,7 +68,7 @@ export default function Layout() {
               <WorkflowEditor />
             </div>
           ) : (
-            <div className="h-full overflow-auto p-4">
+            <div className="h-full overflow-hidden">
               <PreviewPanel />
             </div>
           )}
