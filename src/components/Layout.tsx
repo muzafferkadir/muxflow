@@ -20,6 +20,10 @@ export default function Layout() {
     isGenerating 
   } = useWorkflow();
 
+  // Check if all nodes have descriptions
+  const allNodesHaveDescriptions = nodes.length > 0 && nodes.every(node => node.data.description?.trim());
+  const nodesWithoutDescription = nodes.filter(node => !node.data.description?.trim()).length;
+
   React.useEffect(() => {
     setMounted(true);
   }, []);
@@ -77,8 +81,15 @@ export default function Layout() {
             {/* Generate App Button */}
             <button 
               onClick={generateApp}
-              disabled={isGenerating || nodes.length === 0}
+              disabled={isGenerating || nodes.length === 0 || !allNodesHaveDescriptions}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              title={
+                nodes.length === 0 
+                  ? "Add nodes to your workflow" 
+                  : !allNodesHaveDescriptions 
+                    ? `${nodesWithoutDescription} node(s) missing description`
+                    : "Generate your application"
+              }
             >
               {isGenerating ? (
                 <>
@@ -89,6 +100,9 @@ export default function Layout() {
                 <>
                   <Play size={16} />
                   <span>Generate App</span>
+                  {!allNodesHaveDescriptions && nodes.length > 0 && (
+                    <span className="text-xs opacity-75">({nodesWithoutDescription} missing desc.)</span>
+                  )}
                 </>
               )}
             </button>

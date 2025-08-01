@@ -136,9 +136,7 @@ export default function WorkflowEditor() {
             });
           }}
           className="bg-gray-50"
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         >
           <Controls />
           <MiniMap />

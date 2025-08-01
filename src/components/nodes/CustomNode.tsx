@@ -57,10 +57,18 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
     setIsEditing(false);
   };
 
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+  }, []);
+
   return (
-    <div className={`relative bg-white border-2 rounded-lg shadow-sm min-w-[200px] select-none ${
-      selected ? 'border-blue-400 shadow-md' : 'border-gray-200'
-    }`}>
+    <div 
+      className={`relative bg-white border-2 rounded-lg shadow-sm min-w-[200px] select-none ${
+        selected ? 'border-blue-400 shadow-md' : 'border-gray-200'
+      }`}
+      onDoubleClick={handleDoubleClick}
+    >
       {/* Node Header */}
       <div className={`${nodeColor} text-white p-3 rounded-t-lg`}>
         <div className="flex items-center justify-between">
@@ -88,7 +96,7 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
       {/* Node Content */}
       <div className="p-3">
         {isEditing ? (
-          <div className="space-y-3">
+          <div className="space-y-3" onDoubleClick={(e) => e.stopPropagation()}>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Description (Required)
@@ -101,6 +109,7 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
                 onMouseDown={(e) => e.stopPropagation()}
                 onFocus={(e) => e.stopPropagation()}
                 style={{ userSelect: 'text' }}
+                autoFocus
               />
             </div>
             <div className="flex space-x-2">
@@ -125,10 +134,18 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
               {data.description ? (
                 <div>
                   <p className="font-medium text-gray-800 mb-1">Description:</p>
-                  <p className="text-gray-600 text-xs leading-relaxed">{data.description}</p>
+                  <p className="text-gray-600 text-xs leading-relaxed cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors" 
+                     title="Double-click to edit"
+                     onDoubleClick={handleDoubleClick}>
+                    {data.description}
+                  </p>
                 </div>
               ) : (
-                <p className="text-red-500 font-medium">⚠️ Description required</p>
+                <p className="text-red-500 font-medium cursor-pointer hover:bg-red-50 p-1 rounded transition-colors" 
+                   title="Double-click to add description"
+                   onDoubleClick={handleDoubleClick}>
+                  ⚠️ Description required (double-click to add)
+                </p>
               )}
             </div>
 

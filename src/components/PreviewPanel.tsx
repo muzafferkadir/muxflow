@@ -31,7 +31,8 @@ export default function PreviewPanel() {
 
   const completedNodes = nodes.filter(n => n.data.generatedCode).length;
   const totalNodes = nodes.length;
-  const nodesWithDescriptions = nodes.filter(n => n.data.description).length;
+  const nodesWithDescriptions = nodes.filter(n => n.data.description?.trim()).length;
+  const allNodesHaveDescriptions = totalNodes > 0 && nodesWithDescriptions === totalNodes;
 
   return (
     <div className="h-full bg-white border-l border-gray-200 flex flex-col overflow-hidden">
@@ -58,8 +59,15 @@ export default function PreviewPanel() {
           </button>
           <button
             onClick={generateAllNodes}
-            disabled={nodesWithDescriptions === 0}
+            disabled={!allNodesHaveDescriptions}
             className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title={
+              totalNodes === 0 
+                ? "Add nodes to generate" 
+                : !allNodesHaveDescriptions 
+                  ? `${totalNodes - nodesWithDescriptions} node(s) missing description`
+                  : "Generate all nodes"
+            }
           >
             <Zap size={16} />
             <span>Generate All</span>

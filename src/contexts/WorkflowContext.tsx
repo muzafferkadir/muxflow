@@ -165,6 +165,13 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Check if all nodes have descriptions
+    const nodesWithoutDescription = nodes.filter(node => !node.data.description?.trim());
+    if (nodesWithoutDescription.length > 0) {
+      alert(`${nodesWithoutDescription.length} node(s) are missing descriptions. Please add descriptions to all nodes before generating the app.`);
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
