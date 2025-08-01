@@ -215,14 +215,11 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
       </div>
 
       {/* Handles */}
-      {data.nodeType !== 'input' && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          className="w-3 h-3 bg-gray-400 border-2 border-white"
-        />
-      )}
-      
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="w-3 h-3 bg-gray-400 border-2 border-white"
+      />
       <Handle
         type="source"
         position={Position.Right}
