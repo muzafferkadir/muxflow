@@ -10,6 +10,7 @@ export default function PreviewPanel() {
   const { 
     nodes, 
     generatedApp,
+    webAppPreviewUrl,
     isGeneratingWebApp,
     exportProject 
   } = useWorkflow();
@@ -33,7 +34,11 @@ export default function PreviewPanel() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => {
-                  const blob = new Blob([generatedApp], { type: 'text/html' });
+                  if (webAppPreviewUrl) {
+                    window.open(webAppPreviewUrl, '_blank');
+                    return;
+                  }
+                  const blob = new Blob([generatedApp!], { type: 'text/html' });
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');
                   setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -56,13 +61,22 @@ export default function PreviewPanel() {
       )}
 
       <div className="flex-1 overflow-hidden">
-        {generatedApp ? (
-          <iframe 
-            srcDoc={generatedApp}
-            className="w-full h-full border-0"
-            title="Generated Web Application"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          />
+        {webAppPreviewUrl || generatedApp ? (
+          webAppPreviewUrl ? (
+            <iframe 
+              src={webAppPreviewUrl}
+              className="w-full h-full border-0"
+              title="Generated Web Application"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            />
+          ) : (
+            <iframe 
+              srcDoc={generatedApp!}
+              className="w-full h-full border-0"
+              title="Generated Web Application"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            />
+          )
         ) : isGeneratingWebApp ? (
           <div className="h-full flex items-center justify-center bg-gray-50">
             <div className="text-center">
