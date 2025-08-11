@@ -1,75 +1,37 @@
 // AI service for OpenRouter integration
-export interface AIMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-export interface AIResponse {
-  content: string;
-  error?: string;
-}
+import type { AIMessage, AIResponse } from '@/types';
 
 export class AIService {
-  private apiKey: string;
-  private baseUrl = 'https://openrouter.ai/api/v1';
   private defaultModel: string;
 
   constructor() {
-    this.apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || '';
     this.defaultModel = process.env.NEXT_PUBLIC_DEFAULT_MODEL || 'google/gemini-flash-1.5';
-    
-    if (!this.apiKey) {
-      console.warn('OpenRouter API key not found. Please set NEXT_PUBLIC_OPENROUTER_API_KEY');
-    }
   }
 
   async generateContent(messages: AIMessage[], model?: string): Promise<AIResponse> {
-    if (!this.apiKey) {
-      return { content: '', error: 'API key not configured' };
-    }
-
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      const response = await fetch('/api/ai', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://mkdir.dev',
-          'X-Title': 'MuxFlow Workflow App Builder'
-        },
-        body: JSON.stringify({
-          model: model || this.defaultModel,
-          messages,
-          temperature: 0.6,
-          max_tokens: 20000,
-          stream: false
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages, overrideModel: model || this.defaultModel })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
-      if (!data.choices?.[0]?.message?.content) {
-        throw new Error('Invalid response format from AI service');
-      }
-
-      return {
-        content: data.choices[0].message.content
-      };
+      const content = data?.choices?.[0]?.message?.content;
+      if (!content) throw new Error('Invalid response format from AI service');
+      return { content };
     } catch (error) {
       console.error('AI Service Error:', error);
-      return {
-        content: '',
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
+      return { content: '', error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
-  async generateIntegratedWebApp(nodes: any[]): Promise<AIResponse> {
+  async generateIntegratedWebApp(nodes: Array<{ data: { nodeType: string; label: string; description?: string } }>): Promise<AIResponse> {
     const inputNodes = nodes.filter(n => n.data.nodeType === 'input');
     const actionNodes = nodes.filter(n => n.data.nodeType === 'action');
     const showNodes = nodes.filter(n => n.data.nodeType === 'show');
@@ -135,7 +97,7 @@ CRITICAL: Return only the raw HTML code with inline CSS and JavaScript. No exter
     return this.generateContent(messages);
   }
 
-  async generateProjectStructure(nodes: any[]): Promise<AIResponse> {
+  async generateProjectStructure(nodes: Array<{ data: { nodeType: string; label: string; description?: string } }>): Promise<AIResponse> {
     const inputNodes = nodes.filter(n => n.data.nodeType === 'input');
     const actionNodes = nodes.filter(n => n.data.nodeType === 'action');
     const showNodes = nodes.filter(n => n.data.nodeType === 'show');
@@ -209,7 +171,11 @@ CRITICAL: Return only a JSON object with the file structure. No explanations or 
     return this.generateContent(messages);
   }
 
-  private createWorkflowDescription(inputNodes: any[], actionNodes: any[], showNodes: any[]): string {
+  private createWorkflowDescription(
+    inputNodes: Array<{ data: { label: string; description?: string } }>,
+    actionNodes: Array<{ data: { label: string; description?: string } }>,
+    showNodes: Array<{ data: { label: string; description?: string } }>
+  ): string {
     let description = "Workflow Components:\n\n";
     
     if (inputNodes.length > 0) {
@@ -246,7 +212,10 @@ CRITICAL: Return only a JSON object with the file structure. No explanations or 
     return description;
   }
 
-  async analyzeWorkflow(nodes: any[], edges: any[]): Promise<AIResponse> {
+  async analyzeWorkflow(
+    nodes: Array<{ data: { label: string; description?: string } }>,
+    edges: Array<{ source: string; target: string }>
+  ): Promise<AIResponse> {
     const messages: AIMessage[] = [
       {
         role: 'system',

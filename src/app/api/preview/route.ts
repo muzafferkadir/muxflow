@@ -1,6 +1,6 @@
 export const runtime = 'nodejs';
 
-type StoredFile = { content: string; type: string };
+import type { StoredFile } from '@/types';
 
 declare global {
   // eslint-disable-next-line no-var

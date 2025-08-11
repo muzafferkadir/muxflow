@@ -11,11 +11,14 @@ import {
   BackgroundVariant,
   applyNodeChanges,
   applyEdgeChanges,
+  type NodeChange,
+  type EdgeChange,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import NodeToolbar from './NodeToolbar';
 import CustomNode from './nodes/CustomNode';
 import { useWorkflow } from '@/contexts/WorkflowContext';
+import type { NodeInputData } from '@/types/workflow';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -24,13 +27,13 @@ const nodeTypes = {
 export default function WorkflowEditor() {
   const { nodes, edges, setNodes, setEdges, deleteNode } = useWorkflow();
   
-  const onNodesChange = useCallback((changes: any) => {
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
     setNodes((nds) => {
       return applyNodeChanges(changes, nds);
     });
   }, [setNodes]);
 
-  const onEdgesChange = useCallback((changes: any) => {
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
     setEdges((eds) => {
       return applyEdgeChanges(changes, eds);
     });
@@ -41,7 +44,7 @@ export default function WorkflowEditor() {
     [setEdges]
   );
 
-  const handleAddNode = useCallback(async (nodeData: any) => {
+  const handleAddNode = useCallback(async (nodeData: NodeInputData) => {
     const newNode = {
       id: `node_${Date.now()}`,
       type: 'custom',

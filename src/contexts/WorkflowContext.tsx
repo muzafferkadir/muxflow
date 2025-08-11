@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Node, Edge } from 'reactflow';
 import { webAppGenerator } from '@/services/webAppGenerator';
-import type { ProjectFile } from '@/services/webAppGenerator';
+import type { ProjectFile } from '@/types';
+import toast from 'react-hot-toast';
 
 interface WorkflowNode extends Node {
   data: {
@@ -49,6 +50,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [webAppPreviewUrl, setWebAppPreviewUrl] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [isGeneratingWebApp, setIsGeneratingWebApp] = useState(false);
+  const saveTimeoutRef = React.useRef<number | null>(null);
 
   // Load workflow from localStorage on mount
   useEffect(() => {
@@ -97,6 +99,33 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     }
   }, [nodes, edges, isInitialLoad]);
 
+  // Auto-save with debounce (5s)
+  useEffect(() => {
+    if (isInitialLoad) return;
+    if (!hasUnsavedChanges) return;
+    if (saveTimeoutRef.current) window.clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = window.setTimeout(() => {
+      try {
+        const workflowData = {
+          nodes: nodes,
+          edges: edges,
+          timestamp: new Date().toISOString(),
+          version: '1.0'
+        };
+        localStorage.setItem('muxflow_workflow', JSON.stringify(workflowData));
+        setIsSaved(true);
+        setHasUnsavedChanges(false);
+        toast.success('Workflow saved');
+      } catch (e) {
+        console.error('Auto-save error:', e);
+        toast.error('Auto-save failed');
+      }
+    }, 5000);
+    return () => {
+      if (saveTimeoutRef.current) window.clearTimeout(saveTimeoutRef.current);
+    };
+  }, [nodes, edges, hasUnsavedChanges, isInitialLoad]);
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
@@ -120,13 +149,13 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
 
   const generateApp = useCallback(async () => {
     if (nodes.length === 0) {
-      alert('Please add nodes to your workflow before generating the app.');
+      toast('Add nodes to your workflow before generating the app.', { icon: '⚠️' });
       return;
     }
 
     const nodesWithoutDescription = nodes.filter(node => !node.data.description?.trim());
     if (nodesWithoutDescription.length > 0) {
-      alert(`${nodesWithoutDescription.length} node(s) are missing descriptions. Please add descriptions to all nodes before generating the app.`);
+      toast(`${nodesWithoutDescription.length} node(s) missing descriptions. Add descriptions before generating.`, { icon: '⚠️' });
       return;
     }
 
@@ -182,12 +211,15 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
             const rewrittenFiles = filesForPreview.map((f) => {
               const isHtml = f.name.toLowerCase().endsWith('.html');
               const isJs = f.name.toLowerCase().endsWith('.js');
+              const isCss = f.name.toLowerCase().endsWith('.css');
               if (isHtml) {
                 const c = f.content
                   // href="/foo" -> href="./foo"
                   .replace(/href="\/(?!\/)/g, 'href="./')
                   // src="/foo" -> src="./foo"
-                  .replace(/src="\/(?!\/)/g, 'src="./');
+                  .replace(/src="\/(?!\/)/g, 'src="./')
+                  // navigator.serviceWorker.register('/service-worker.js') -> 'service-worker.js'
+                  .replace(/serviceWorker\.register\(["']\/(?!\/)/g, "serviceWorker.register('");
                 return { ...f, content: c };
               }
               if (isJs) {
@@ -196,8 +228,27 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
                   .replace(/serviceWorker\.register\(["']\/(?!\/)/g, "serviceWorker.register('");
                 return { ...f, content: c };
               }
+              if (isCss) {
+                const c = f.content
+                  // url("/foo") -> url("./foo")
+                  .replace(/url\(\s*"\/(?!\/)\s*/g, 'url("./')
+                  // url('/foo') -> url('./foo')
+                  .replace(/url\(\s*'\/(?!\/)\s*/g, "url('./")
+                  // url(/foo) -> url(./foo)
+                  .replace(/url\(\s*\/(?!\/)\s*/g, 'url(./');
+                return { ...f, content: c };
+              }
               return f;
             });
+
+            const hasServiceWorkerFile = rewrittenFiles.some((f) => f.name.toLowerCase() === 'service-worker.js');
+            const intendsToRegisterSW = rewrittenFiles.some((f) => /serviceWorker\.register\(\s*["']/.test(f.content));
+            if (intendsToRegisterSW && !hasServiceWorkerFile) {
+              rewrittenFiles.push({
+                name: 'service-worker.js',
+                content: `self.addEventListener('install', () => self.skipWaiting());\nself.addEventListener('activate', () => self.clients.claim());`,
+              });
+            }
 
             const res = await fetch('/api/preview', {
               method: 'POST',
@@ -228,7 +279,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       
     } catch (error) {
       console.error('Error generating app:', error);
-      alert('Error generating app. Please try again.');
+      toast.error('Error generating app. Please try again.');
     } finally {
       setIsGeneratingWebApp(false);
     }
@@ -246,9 +297,10 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('muxflow_workflow', JSON.stringify(workflowData));
       setIsSaved(true);
       setHasUnsavedChanges(false);
+      toast.success('Workflow saved');
       } catch (error) {
       console.error('Error saving workflow:', error);
-      alert('Error saving workflow. Please try again.');
+      toast.error('Error saving workflow. Please try again.');
     }
   }, [nodes, edges]);
 
@@ -261,12 +313,13 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
         setEdges(workflowData.edges || []);
         setIsSaved(true);
         setHasUnsavedChanges(false);
+        toast.success('Workflow loaded');
         return true;
       }
       return false;
     } catch (error) {
       console.error('Error loading workflow:', error);
-      alert('Error loading workflow.');
+      toast.error('Error loading workflow.');
       return false;
     }
   }, []);

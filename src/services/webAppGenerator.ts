@@ -1,16 +1,16 @@
-export interface ProjectFile {
-  name: string;
-  content: string;
-}
+import type { ProjectFile } from '@/types';
+
+import type { WorkflowNodeLike, WorkflowEdgeLike } from '@/types/workflow';
 
 export class WebAppGeneratorService {
-  async generateFromWorkflow(nodes: any[], edges: any[]): Promise<{
+  async generateFromWorkflow(nodes: WorkflowNodeLike[], _edges: WorkflowEdgeLike[]): Promise<{
     success: boolean;
     htmlContent?: string;
     projectFiles?: ProjectFile[];
     error?: string;
   }> {
     try {
+      void _edges;
       const { aiService } = await import('./aiService');
       const htmlResponse = await aiService.generateIntegratedWebApp(nodes);
       const projectResponse = await aiService.generateProjectStructure(nodes);
@@ -95,31 +95,44 @@ ${cleaned}
     error?: string;
   } {
     try {
-      let projectData;
       const cleanedResponse = content.trim();
-      
-      try {
-        projectData = JSON.parse(cleanedResponse);
-      } catch (parseError) {
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            projectData = JSON.parse(jsonMatch[0]);
-          } catch {
-            return {
-              success: false,
-              error: 'Failed to parse project structure response'
-            };
+      let projectData: unknown;
+
+      const tryParse = (text: string) => {
+        try { return JSON.parse(text); } catch { return undefined; }
+      };
+
+      projectData = tryParse(cleanedResponse);
+
+      if (!projectData) {
+        // Attempt to extract the shortest valid JSON object using bracket counting
+        const start = cleanedResponse.indexOf('{');
+        const end = cleanedResponse.lastIndexOf('}');
+        if (start !== -1 && end !== -1 && end > start) {
+          const slice = cleanedResponse.slice(start, end + 1);
+          // Balance braces progressively to avoid greedy over-capture issues
+          let depth = 0;
+          let finalEnd = -1;
+          for (let i = 0; i < slice.length; i++) {
+            const ch = slice[i];
+            if (ch === '{') depth++;
+            else if (ch === '}') {
+              depth--;
+              if (depth === 0) { finalEnd = i; break; }
+            }
           }
-        } else {
-          return {
-            success: false,
-            error: 'Invalid project structure response format'
-          };
+          if (finalEnd !== -1) {
+            projectData = tryParse(slice.slice(0, finalEnd + 1));
+          }
         }
       }
 
-      if (!projectData.files || !Array.isArray(projectData.files)) {
+      if (!projectData || typeof projectData !== 'object' || projectData === null) {
+        return { success: false, error: 'Invalid project structure response format' };
+      }
+
+      const files = (projectData as { files?: ProjectFile[] }).files;
+      if (!files || !Array.isArray(files)) {
         return {
           success: false,
           error: 'Invalid project structure: missing files array'
@@ -128,7 +141,7 @@ ${cleaned}
 
       return {
         success: true,
-        files: projectData.files
+        files
       };
     } catch (error) {
       return {

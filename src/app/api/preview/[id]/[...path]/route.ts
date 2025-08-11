@@ -6,6 +6,9 @@ declare global {
 }
 
 function getStore() {
+  if (!globalThis.__muxflow_preview_store) {
+    globalThis.__muxflow_preview_store = new Map();
+  }
   return globalThis.__muxflow_preview_store;
 }
 
@@ -66,7 +69,7 @@ function notFound() {
   return new Response('Not found', { status: 404 });
 }
 
-type PreviewRouteParams = { id: string; path?: string[] };
+import type { PreviewRouteParams } from '@/types';
 
 export async function GET(request: Request, context: { params: PreviewRouteParams }) {
   const { id, path = [] } = context.params || ({} as unknown as PreviewRouteParams);
