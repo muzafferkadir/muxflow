@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { Node, Edge } from 'reactflow';
 import { webAppGenerator } from '@/services/webAppGenerator';
 import type { ProjectFile } from '@/types';
+import type { GenerationHistoryItem } from '@/types/workflow';
 import toast from 'react-hot-toast';
 
 interface WorkflowNode extends Node {
@@ -34,6 +35,8 @@ interface WorkflowContextType {
   loadWorkflow: () => boolean;
   exportProject: () => void;
   deleteNode: (nodeId: string) => void;
+  history: GenerationHistoryItem[];
+  clearHistory: () => void;
 }
 
 const WorkflowContext = createContext<WorkflowContextType | undefined>(undefined);
@@ -50,6 +53,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [webAppPreviewUrl, setWebAppPreviewUrl] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [isGeneratingWebApp, setIsGeneratingWebApp] = useState(false);
+  const [history, setHistory] = useState<GenerationHistoryItem[]>([]);
   const saveTimeoutRef = React.useRef<number | null>(null);
 
   // Load workflow from localStorage on mount
@@ -88,6 +92,15 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
         const newId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
         localStorage.setItem('muxflow_preview_id', newId);
         setPreviewId(newId);
+      }
+    } catch {}
+
+    // Load generation history
+    try {
+      const savedHistory = localStorage.getItem('muxflow_history');
+      if (savedHistory) {
+        const parsed: GenerationHistoryItem[] = JSON.parse(savedHistory);
+        if (Array.isArray(parsed)) setHistory(parsed);
       }
     } catch {}
   }, []);
@@ -273,6 +286,40 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
         }
 
         console.log('App generated successfully');
+
+        // Append to generation history
+        try {
+          const newItem: GenerationHistoryItem = {
+            id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+            createdAt: new Date().toISOString(),
+            nodeLabels: nodes.map((n) => n.data.label),
+            nodeTypes: nodes.map((n) => n.data.nodeType),
+            totalNodes: nodes.length,
+            totalEdges: edges.length,
+            mermaid: (() => {
+              try {
+                const lines: string[] = ['graph TD'];
+                nodes.forEach((n) => {
+                  const safeLabel = (n.data.label || n.id).replace(/[\n\r]/g, ' ');
+                  lines.push(`${n.id}["${safeLabel}"]`);
+                });
+                edges.forEach((e) => {
+                  lines.push(`${e.source}-->${e.target}`);
+                });
+                return lines.join('\n');
+              } catch {
+                return '';
+              }
+            })()
+          };
+          setHistory((prev) => {
+            const updated = [newItem, ...prev].slice(0, 100);
+            try {
+              localStorage.setItem('muxflow_history', JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+        } catch {}
       } else {
         throw new Error(result.error || 'Failed to generate app');
       }
@@ -383,7 +430,12 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       saveWorkflow,
       loadWorkflow,
       exportProject,
-      deleteNode
+      deleteNode,
+      history,
+      clearHistory: () => {
+        setHistory([]);
+        try { localStorage.removeItem('muxflow_history'); } catch {}
+      }
     }}>
       {children}
     </WorkflowContext.Provider>

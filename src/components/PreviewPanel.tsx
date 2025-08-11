@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Download, Globe, ExternalLink } from 'lucide-react';
+import { Globe, ExternalLink } from 'lucide-react';
 import { useWorkflow } from '@/contexts/WorkflowContext';
 
 export default function PreviewPanel() {
@@ -12,7 +12,7 @@ export default function PreviewPanel() {
     generatedApp,
     webAppPreviewUrl,
     isGeneratingWebApp,
-    exportProject 
+    projectFiles
   } = useWorkflow();
 
   React.useEffect(() => {
@@ -27,7 +27,7 @@ export default function PreviewPanel() {
 
   return (
     <div className="h-full bg-white flex flex-col overflow-hidden">
-      {generatedApp && (
+      {(generatedApp || (projectFiles && projectFiles.length > 0)) && (
         <div className="p-2 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
             <div className="text-xs text-gray-500">Generated Application</div>
@@ -38,22 +38,25 @@ export default function PreviewPanel() {
                     window.open(webAppPreviewUrl, '_blank');
                     return;
                   }
-                  const blob = new Blob([generatedApp!], { type: 'text/html' });
-                  const url = URL.createObjectURL(blob);
-                  window.open(url, '_blank');
-                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                  if (projectFiles && projectFiles.length > 0) {
+                    const indexFile = projectFiles.find(f => f.name.toLowerCase() === 'index.html') || projectFiles[0];
+                    const blob = new Blob([indexFile.content], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    return;
+                  }
+                  if (generatedApp) {
+                    const blob = new Blob([generatedApp], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                  }
                 }}
                 className="flex items-center space-x-1 text-purple-600 hover:text-purple-800 text-xs px-2 py-1 rounded border border-purple-200 hover:bg-purple-50"
               >
                 <ExternalLink size={12} />
                 <span>Open</span>
-              </button>
-              <button
-                onClick={exportProject}
-                className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                title="Export"
-              >
-                <Download size={12} />
               </button>
             </div>
           </div>
@@ -61,10 +64,17 @@ export default function PreviewPanel() {
       )}
 
       <div className="flex-1 overflow-hidden">
-        {webAppPreviewUrl || generatedApp ? (
+        {webAppPreviewUrl || generatedApp || (projectFiles && projectFiles.length > 0) ? (
           webAppPreviewUrl ? (
             <iframe 
               src={webAppPreviewUrl}
+              className="w-full h-full border-0"
+              title="Generated Web Application"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            />
+          ) : projectFiles && projectFiles.length > 0 ? (
+            <iframe 
+              srcDoc={projectFiles.find(f => f.name.toLowerCase() === 'index.html')?.content || projectFiles[0].content}
               className="w-full h-full border-0"
               title="Generated Web Application"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"

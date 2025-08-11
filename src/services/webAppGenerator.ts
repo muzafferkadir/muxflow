@@ -1,9 +1,10 @@
 import type { ProjectFile } from '@/types';
 
 import type { WorkflowNodeLike, WorkflowEdgeLike } from '@/types/workflow';
+import type { GenerationHistoryItem } from '@/types/workflow';
 
 export class WebAppGeneratorService {
-  async generateFromWorkflow(nodes: WorkflowNodeLike[], _edges: WorkflowEdgeLike[]): Promise<{
+  async generateFromWorkflow(nodes: WorkflowNodeLike[], _edges: WorkflowEdgeLike[], _history?: GenerationHistoryItem[]): Promise<{
     success: boolean;
     htmlContent?: string;
     projectFiles?: ProjectFile[];
@@ -11,22 +12,22 @@ export class WebAppGeneratorService {
   }> {
     try {
       void _edges;
+      void _history;
       const { aiService } = await import('./aiService');
-      const htmlResponse = await aiService.generateIntegratedWebApp(nodes);
       const projectResponse = await aiService.generateProjectStructure(nodes);
-      
-      if (htmlResponse.error && projectResponse.error) {
-        return {
-          success: false,
-          error: `HTML Generation: ${htmlResponse.error}; Project Generation: ${projectResponse.error}`
-        };
-      }
 
       let htmlContent = undefined;
-      let projectFiles = undefined;
+      let projectFiles: ProjectFile[] | undefined = undefined;
 
-      if (!htmlResponse.error && htmlResponse.content) {
-        htmlContent = this.parseHtmlFromResponse(htmlResponse.content);
+      // If project response contains an index.html, prefer that for preview.
+      if (!projectResponse.error && projectResponse.content) {
+        const parsedProject = this.parseProjectFromResponse(projectResponse.content);
+        if (parsedProject.success && parsedProject.files) {
+          const index = parsedProject.files.find(f => f.name.toLowerCase() === 'index.html') || parsedProject.files[0];
+          if (index) {
+            htmlContent = index.content;
+          }
+        }
       }
 
       if (!projectResponse.error && projectResponse.content) {
@@ -105,12 +106,10 @@ ${cleaned}
       projectData = tryParse(cleanedResponse);
 
       if (!projectData) {
-        // Attempt to extract the shortest valid JSON object using bracket counting
         const start = cleanedResponse.indexOf('{');
         const end = cleanedResponse.lastIndexOf('}');
         if (start !== -1 && end !== -1 && end > start) {
           const slice = cleanedResponse.slice(start, end + 1);
-          // Balance braces progressively to avoid greedy over-capture issues
           let depth = 0;
           let finalEnd = -1;
           for (let i = 0; i < slice.length; i++) {
@@ -133,21 +132,12 @@ ${cleaned}
 
       const files = (projectData as { files?: ProjectFile[] }).files;
       if (!files || !Array.isArray(files)) {
-        return {
-          success: false,
-          error: 'Invalid project structure: missing files array'
-        };
+        return { success: false, error: 'Invalid project structure: missing files array' };
       }
 
-      return {
-        success: true,
-        files
-      };
+      return { success: true, files };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to parse project response'
-      };
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to parse project response' };
     }
   }
 }

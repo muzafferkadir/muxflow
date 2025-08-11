@@ -19,12 +19,17 @@ import NodeToolbar from './NodeToolbar';
 import CustomNode from './nodes/CustomNode';
 import { useWorkflow } from '@/contexts/WorkflowContext';
 import type { NodeInputData } from '@/types/workflow';
+import { History } from 'lucide-react';
 
 const nodeTypes = {
   custom: CustomNode,
 };
 
-export default function WorkflowEditor() {
+type WorkflowEditorProps = {
+  onToggleHistory?: () => void;
+};
+
+export default function WorkflowEditor({ onToggleHistory }: WorkflowEditorProps) {
   const { nodes, edges, setNodes, setEdges, deleteNode } = useWorkflow();
   
   const onNodesChange = useCallback((changes: NodeChange[]) => {
@@ -70,6 +75,18 @@ export default function WorkflowEditor() {
       <div className="absolute left-4 top-12 w-64 bg-white border border-gray-200 rounded-lg shadow-sm z-10">
         <NodeToolbar onAddNode={handleAddNode} />
       </div>
+
+      {onToggleHistory && (
+        <div className="absolute right-2 top-2 z-10">
+          <button
+            onClick={onToggleHistory}
+            className="px-3 py-2 text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm transition-colors flex items-center space-x-2"
+            title="Toggle history"
+          >
+            <History size={16} />
+          </button>
+        </div>
+      )}
 
       <div className="w-full h-full">
         <ReactFlow

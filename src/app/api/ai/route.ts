@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
-  const { messages, overrideModel } = (body as { messages?: ChatMessage[]; overrideModel?: string }) || {};
+  const { messages } = (body as { messages?: ChatMessage[] }) || {};
   if (!Array.isArray(messages) || messages.length === 0) {
     return new Response(JSON.stringify({ error: 'Missing messages' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         'X-Title': 'MuxFlow Workflow App Builder',
       },
       body: JSON.stringify({
-        model: overrideModel || model,
+        model: model,
         messages,
         temperature: 0.6,
         max_tokens: 20000,

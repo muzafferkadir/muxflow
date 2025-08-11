@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import WorkflowEditor from '@/components/WorkflowEditor';
 import PreviewPanel from '@/components/PreviewPanel';
-import ProjectFiles from '@/components/ProjectFiles';
 import { useWorkflow } from '@/contexts/WorkflowContext';
-import { Save, Globe, Loader2, AlertCircle } from 'lucide-react';
+import ProjectFiles from '@/components/ProjectFiles';
+import { Save, Globe, Loader2, AlertCircle, X, History, Trash2 } from 'lucide-react';
 
 export default function Layout() {
   const [mounted, setMounted] = React.useState(false);
   const [activeTab, setActiveTab] = useState('workflow');
+  const [showHistory, setShowHistory] = useState(false);
   
   const { 
     nodes,
@@ -17,7 +18,9 @@ export default function Layout() {
     generateApp,
     hasUnsavedChanges,
     isSaved,
-    isGeneratingWebApp
+    isGeneratingWebApp,
+    history,
+    clearHistory
   } = useWorkflow();
 
   const isProcessing = isGeneratingWebApp;
@@ -52,7 +55,7 @@ export default function Layout() {
   }
 
   return (
-    <main className="h-screen w-screen min-w-[1080px] bg-gray-50 overflow-visible">
+    <main className="h-screen w-screen min-w-[900px] bg-gray-50 overflow-visible">
       <div className="h-full flex flex-col">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
@@ -156,10 +159,10 @@ export default function Layout() {
           </div>
         </div>
 
-        <div className="flex-1 flex">
+        <div className="flex-1 flex relative overflow-hidden">
           {activeTab === 'workflow' && (
             <div className="w-full h-full">
-              <WorkflowEditor />
+              <WorkflowEditor onToggleHistory={() => setShowHistory((s) => !s)} />
             </div>
           )}
           
@@ -175,6 +178,50 @@ export default function Layout() {
             </div>
           )}
         </div>
+
+        {/* Slide-over History Sidebar */}
+        {showHistory && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute z-[11] right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-xl pointer-events-auto flex flex-col">
+              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <History size={16} className="text-gray-600" />
+                  <span className="text-sm font-semibold text-gray-800">Generation History</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => clearHistory()}
+                    className="p-1 text-gray-500 hover:text-red-600"
+                    title="Clear history"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <button onClick={() => setShowHistory(false)} className="p-1 text-gray-500 hover:text-gray-700"><X size={16} /></button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-auto">
+                {history.length === 0 ? (
+                  <div className="p-4 text-sm text-gray-500">No history yet.</div>
+                ) : (
+                  <ul className="divide-y divide-gray-100">
+                    {history.map((h) => (
+                      <li key={h.id} className="p-4">
+                        <div className="text-xs text-gray-500">{new Date(h.createdAt).toLocaleString()}</div>
+                        <div className="text-sm font-medium text-gray-800 mt-1">{h.totalNodes} nodes, {h.totalEdges} edges</div>
+                        <div className="text-xs text-gray-600 mt-1 line-clamp-2">{h.nodeLabels.join(', ')}</div>
+                        {h.mermaid && (
+                          <pre className="mt-2 p-2 bg-gray-50 text-[10px] text-gray-700 rounded border border-gray-100 overflow-auto">
+{h.mermaid}
+                          </pre>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

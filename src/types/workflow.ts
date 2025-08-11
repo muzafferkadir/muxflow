@@ -26,4 +26,14 @@ export interface NodeInputData {
   description?: string;
 }
 
+export interface GenerationHistoryItem {
+  id: string;
+  createdAt: string;
+  nodeLabels: string[];
+  nodeTypes: string[];
+  totalNodes: number;
+  totalEdges: number;
+  mermaid: string;
+}
+
 
