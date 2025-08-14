@@ -1,8 +1,6 @@
-# MuxFlow
+# AppletFlow
 
-**Build AI-Powered Mini Apps with Visual Workflows**
-
-MuxFlow is an open-source workflow builder for creating AI-powered mini applications. Connect prompts, AI models, and tools to create powerful, interactive workflows that can be deployed as standalone applications.
+AppletFlow is an open-source workflow builder for creating AI-powered mini applications. Connect prompts, AI models, and tools to create powerful, interactive workflows that can be deployed as standalone applications.
 
 ## ✨ Features
 
@@ -17,8 +15,8 @@ MuxFlow is an open-source workflow builder for creating AI-powered mini applicat
 
 ```bash
 # Clone the repository
-git clone https://github.com/muzafferkadir/muxflow.git
-cd muxflow
+git clone https://github.com/muzafferkadir/appletflow.git
+cd appletflow
 
 # Install dependencies
 npm install
@@ -65,7 +63,7 @@ NEXT_PUBLIC_DEFAULT_MODEL=google/gemini-flash-1.5
 
 ### AI Agent System
 
-After creating your workflow in MuxFlow:
+After creating your workflow in AppletFlow:
 
 1. **Required Description**: Enter a descriptive explanation for each node
 2. **AI Analysis**: Artificial intelligence analyzes your workflow and creates a todo list
@@ -75,7 +73,7 @@ After creating your workflow in MuxFlow:
 
 ### AI Integration (OpenRouter)
 
-MuxFlow uses the Google Gemini Flash 1.5 model via OpenRouter API:
+AppletFlow uses the Google Gemini Flash 1.5 model via OpenRouter API:
 
 1. **API Configuration**: Set your OpenRouter token in the `.env.local` file
 2. **Node Generation**: Optimized AI prompts for each node type
@@ -152,4 +150,4 @@ This project is licensed under the MIT License.
 
 ---
 
-**MuxFlow** - Visualize and automate your AI workflows!
+**AppletFlow**

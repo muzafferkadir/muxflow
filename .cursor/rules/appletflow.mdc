@@ -1,16 +1,16 @@
 ---
 alwaysApply: true
-description: MuxFlow project architecture, data contracts, generation flow, preview rules, and coding standards.
+description: AppletFlow project architecture, data contracts, generation flow, preview rules, and coding standards.
 ---
-# MuxFlow — Project Rules and Architecture
+# AppletFlow — Project Rules and Architecture
 
 ## Purpose
-MuxFlow lets users design visual workflows (nodes and edges) and generates a production‑ready static web application (HTML/CSS/ESM JS) via an AI backend. Users can preview the generated app in‑app or on S3, and export files as a ZIP.
+AppletFlow lets users design visual workflows (nodes and edges) and generates a production‑ready static web application (HTML/CSS/ESM JS) via an AI backend. Users can preview the generated app in‑app or on S3, and export files as a ZIP.
 
 ## High‑Level Architecture
 - App: Next.js 14 (App Router), React 18
 - Workflow editor: React Flow
-- UI: Tailwind CSS (for MuxFlow UI only)
+- UI: Tailwind CSS (for AppletFlow UI only)
 - AI: OpenRouter chat completions API (server route `/api/ai`)
 - Preview: optional S3 (R2/MinIO compatible) or in‑memory store (server route `/api/preview` and `/api/preview/[id]/...`)
 
@@ -59,7 +59,7 @@ MuxFlow lets users design visual workflows (nodes and edges) and generates a pro
 - Accessibility and clean minimalist UI guidelines are included in the system prompt.
 - Return JSON only; no markdown code fences or explanations.
 
-## Coding Standards (MuxFlow codebase)
+## Coding Standards (AppletFlow codebase)
 - TypeScript
   - Use domain types from `src/types` for props, params, and state where applicable.
   - Prefer explicit types for exported APIs and complex function signatures.

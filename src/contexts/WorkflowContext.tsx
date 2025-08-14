@@ -57,7 +57,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const saveTimeoutRef = React.useRef<number | null>(null);
 
   useEffect(() => {
-    const savedWorkflow = localStorage.getItem('muxflow_workflow');
+    const savedWorkflow = localStorage.getItem('appletflow_workflow');
     if (savedWorkflow) {
       try {
         const workflowData = JSON.parse(savedWorkflow);
@@ -72,18 +72,18 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
 
     setIsInitialLoad(false);
     try {
-      const savedPreviewId = localStorage.getItem('muxflow_preview_id');
+      const savedPreviewId = localStorage.getItem('appletflow_preview_id');
       if (savedPreviewId) {
         setPreviewId(savedPreviewId);
       } else {
         const newId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-        localStorage.setItem('muxflow_preview_id', newId);
+        localStorage.setItem('appletflow_preview_id', newId);
         setPreviewId(newId);
       }
     } catch {}
 
     try {
-      const savedHistory = localStorage.getItem('muxflow_history');
+      const savedHistory = localStorage.getItem('appletflow_history');
       if (savedHistory) {
         const parsed: GenerationHistoryItem[] = JSON.parse(savedHistory);
         if (Array.isArray(parsed)) setHistory(parsed);
@@ -117,7 +117,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
           timestamp: new Date().toISOString(),
           version: '1.0'
         };
-        localStorage.setItem('muxflow_workflow', JSON.stringify(workflowData));
+        localStorage.setItem('appletflow_workflow', JSON.stringify(workflowData));
         setIsSaved(true);
         setHasUnsavedChanges(false);
         toast.success('Workflow saved');
@@ -290,7 +290,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
             }
             const updated = [newItem, ...prev].slice(0, 100);
             try {
-              localStorage.setItem('muxflow_history', JSON.stringify(updated));
+              localStorage.setItem('appletflow_history', JSON.stringify(updated));
             } catch {}
             return updated;
           });
@@ -316,7 +316,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
         version: '1.0'
       };
       
-      localStorage.setItem('muxflow_workflow', JSON.stringify(workflowData));
+       localStorage.setItem('appletflow_workflow', JSON.stringify(workflowData));
       setIsSaved(true);
       setHasUnsavedChanges(false);
       toast.success('Workflow saved');
@@ -328,7 +328,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
 
   const loadWorkflow = useCallback(() => {
     try {
-      const savedWorkflow = localStorage.getItem('muxflow_workflow');
+       const savedWorkflow = localStorage.getItem('appletflow_workflow');
       if (savedWorkflow) {
         const workflowData = JSON.parse(savedWorkflow);
         setNodes(workflowData.nodes || []);
@@ -375,13 +375,13 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     files.forEach((f) => zip.file(f.name, f.content));
 
     // Add README with local run instructions
-    const readme = `MuxFlow Export\n\nHow to run locally (recommended):\n\n1) Python (built-in on macOS)\n   cd <unzipped-folder>\n   python3 -m http.server 5500\n   Open http://localhost:5500/index.html\n\n2) Node (http-server)\n   npx http-server -p 5500 --cors\n   Open http://localhost:5500/index.html\n\n3) Node (serve)\n   npx serve -l 5500\n   Open http://localhost:5500\n\nNotes:\n- Opening index.html via file:// causes CORS issues for ES modules, manifest and service worker.\n- Service Worker requires HTTPS or localhost. Use the Open button (new tab) or a local server.\n`;
+    const readme = `How to run locally (recommended):\n\n1) Python (built-in on macOS)\n   cd <unzipped-folder>\n   python3 -m http.server 5500\n   Open http://localhost:5500/index.html\n\n2) Node (http-server)\n   npx http-server -p 5500 --cors\n   Open http://localhost:5500/index.html\n\n3) Node (serve)\n   npx serve -l 5500\n   Open http://localhost:5500\n\nNotes:\n- Opening index.html via file:// causes CORS issues for ES modules, manifest and service worker.\n- Service Worker requires HTTPS or localhost. Use the Open button (new tab) or a local server.\n`;
     zip.file('README.txt', readme);
     const content = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(content);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'muxflow-project.zip';
+    a.download = 'appletflow-project.zip';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -408,7 +408,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       history,
       clearHistory: () => {
         setHistory([]);
-        try { localStorage.removeItem('muxflow_history'); } catch {}
+        try { localStorage.removeItem('appletflow_history'); } catch {}
       }
     }}>
       {children}

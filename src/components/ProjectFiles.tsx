@@ -33,7 +33,7 @@ export default function ProjectFiles() {
     projectFiles.forEach((file) => {
       zip.file(file.name, file.content);
     });
-    const readme = `MuxFlow Export\n\nHow to run locally (recommended):\n\n1) Python (built-in on macOS)\n   cd <unzipped-folder>\n   python3 -m http.server 5500\n   Open http://localhost:5500/index.html\n\n2) Node (http-server)\n   npx http-server -p 5500 --cors\n   Open http://localhost:5500/index.html\n\n3) Node (serve)\n   npx serve -l 5500\n   Open http://localhost:5500\n\nNotes:\n- Opening index.html via file:// may cause CORS issues for ES modules, manifest and service worker.\n- Service Worker requires HTTPS or localhost. Use a local server.\n`;
+    const readme = `How to run locally (recommended):\n\n1) Python (built-in on macOS)\n   cd <unzipped-folder>\n   python3 -m http.server 5500\n   Open http://localhost:5500/index.html\n\n2) Node (http-server)\n   npx http-server -p 5500 --cors\n   Open http://localhost:5500/index.html\n\n3) Node (serve)\n   npx serve -l 5500\n   Open http://localhost:5500\n\nNotes:\n- Opening index.html via file:// may cause CORS issues for ES modules, manifest and service worker.\n- Service Worker requires HTTPS or localhost. Use a local server.\n`;
     zip.file('README.txt', readme);
     
     const content = await zip.generateAsync({ type: 'blob' });

@@ -1,5 +1,5 @@
 {
-  "name": "muxflow",
+  "name": "appletflow",
   "version": "0.1.0",
   "description": "Build AI-Powered Micro Apps with Visual Workflows - An open-source workflow builder for creating standalone AI applications",
   "keywords": [
@@ -12,7 +12,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/muzafferkadir/muxflow.git"
+    "url": "https://github.com/muzafferkadir/appletflow.git"
   },
   "private": true,
   "scripts": {

@@ -2,14 +2,14 @@ export const runtime = 'nodejs';
 
 declare global {
   // eslint-disable-next-line no-var
-  var __muxflow_preview_store: Map<string, Record<string, { content: string; type: string }>> | undefined;
+  var __appletflow_preview_store: Map<string, Record<string, { content: string; type: string }>> | undefined;
 }
 
 function getStore() {
-  if (!globalThis.__muxflow_preview_store) {
-    globalThis.__muxflow_preview_store = new Map();
+  if (!globalThis.__appletflow_preview_store) {
+    globalThis.__appletflow_preview_store = new Map();
   }
-  return globalThis.__muxflow_preview_store;
+  return globalThis.__appletflow_preview_store;
 }
 
 function isS3Enabled() {

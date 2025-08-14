@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://mkdir.dev',
-        'X-Title': 'MuxFlow Workflow App Builder',
+        'X-Title': 'AppletFlow',
       },
       body: JSON.stringify({
         model: model,

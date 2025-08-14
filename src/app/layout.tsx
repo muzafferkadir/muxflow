@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MuxFlow - Workflow App Builder",
+  title: "AppletFlow",
   description: "Open-source library for building AI workflow applications, inspired by Google Opal",
 };
 
