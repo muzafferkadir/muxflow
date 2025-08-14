@@ -30,7 +30,7 @@ function getS3ClientConfig(): {
   const region = process.env.S3_REGION as string;
   const accessKeyId = process.env.S3_ACCESS_KEY as string;
   const secretAccessKey = process.env.S3_SECRET as string;
-  const endpoint = process.env.S3_ENDPOINT as string | undefined; // R2/MinIO endpoint
+  const endpoint = process.env.S3_ENDPOINT as string | undefined;
   const forcePathStyle = (process.env.S3_FORCE_PATH_STYLE || 'true').toLowerCase() === 'true';
   const config: {
     region: string;

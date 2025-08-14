@@ -48,7 +48,6 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
   const nodeColor = nodeColors[data.nodeType as keyof typeof nodeColors] || 'bg-gray-500';
 
   const handleSave = () => {
-    // Update node data in context
     setNodes(prev => prev.map(node => 
       node.id === id 
         ? { ...node, data: { ...node.data, description } }
@@ -69,7 +68,6 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
       }`}
       onDoubleClick={handleDoubleClick}
     >
-      {/* Node Header */}
       <div className={`${nodeColor} text-white p-3 rounded-t-lg`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -93,7 +91,6 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
         </div>
       </div>
 
-      {/* Node Content */}
       <div className="p-3">
         {isEditing ? (
           <div className="space-y-3" onDoubleClick={(e) => e.stopPropagation()}>
@@ -149,7 +146,6 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
               )}
             </div>
 
-            {/* Status Display */}
             {data.isProcessing && (
               <div className="flex items-center space-x-2 text-xs text-blue-600">
                 <Loader2 size={12} className="animate-spin" />
@@ -157,7 +153,6 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
               </div>
             )}
 
-            {/* Error Display */}
             {data.error && (
               <div className="mt-2 p-2 bg-red-50 text-red-600 text-xs rounded border border-red-200">
                 Error: {data.error}
@@ -167,7 +162,6 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
         )}
       </div>
 
-      {/* Handles */}
       <Handle
         type="target"
         position={Position.Left}
@@ -179,7 +173,6 @@ function CustomNode({ data, id, selected }: NodeProps<CustomNodeData>) {
         className="w-3 h-3 bg-gray-400 border-2 border-white"
       />
 
-      {/* Node Status Indicator */}
       <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
     </div>
   );

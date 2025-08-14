@@ -1,0 +1,109 @@
+---
+alwaysApply: true
+description: MuxFlow project architecture, data contracts, generation flow, preview rules, and coding standards.
+---
+# MuxFlow — Project Rules and Architecture
+
+## Purpose
+MuxFlow lets users design visual workflows (nodes and edges) and generates a production‑ready static web application (HTML/CSS/ESM JS) via an AI backend. Users can preview the generated app in‑app or on S3, and export files as a ZIP.
+
+## High‑Level Architecture
+- App: Next.js 14 (App Router), React 18
+- Workflow editor: React Flow
+- UI: Tailwind CSS (for MuxFlow UI only)
+- AI: OpenRouter chat completions API (server route `/api/ai`)
+- Preview: optional S3 (R2/MinIO compatible) or in‑memory store (server route `/api/preview` and `/api/preview/[id]/...`)
+
+## Directory Overview
+- [`src/contexts/WorkflowContext.tsx`](mdc:src/contexts/WorkflowContext.tsx): Global workflow state, autosave, diffing, generation, preview publish, export ZIP
+- [`src/services/aiService.ts`](mdc:src/services/aiService.ts): AI prompt assembly and calling `/api/ai`
+- [`src/services/webAppGenerator.ts`](mdc:src/services/webAppGenerator.ts): Orchestrates AI generation and JSON parsing to files
+- [`src/services/workflowDiff.ts`](mdc:src/services/workflowDiff.ts): Snapshots, hash, Mermaid graph, diffs
+- [`src/app/api/ai/route.ts`](mdc:src/app/api/ai/route.ts): Proxy to OpenRouter
+- [`src/app/api/preview/route.ts`](mdc:src/app/api/preview/route.ts): Accepts `{ id, files }` and publishes to S3 or in‑memory store
+- [`src/app/api/preview/[id]/[...path]/route.ts`](mdc:src/app/api/preview/[id]/[...path]/route.ts): Serves published preview files
+- [`src/app/service-worker.js/route.ts`](mdc:src/app/service-worker.js/route.ts): Minimal service worker response
+- [`src/components`](mdc:src/components): UI components (editor, preview, file list, nodes)
+- [`src/types`](mdc:src/types): Domain types used across the app
+
+## Core Data Contracts (src/types)
+- `WorkflowNodeData`: `{ label: string; nodeType: string; description?: string; prompt?: string; generatedCode?: string; isProcessing?: boolean; error?: string }`
+- `WorkflowEdgeLike`: `{ id?: string; source: string; target: string }`
+- `NodeInputData`: input payload when creating a new node (label/nodeType/prompt/description)
+- `GenerationHistoryItem`: snapshot metadata (labels/types/counts/mermaid) + optional `nodesSnapshot`, `edgesSnapshot`, `snapshotHash`
+- `ProjectFile`: `{ name: string; content: string }`
+- `AIMessage` and `AIResponse`: OpenRouter message/response
+- `PreviewRouteParams`: `{ id: string; path?: string[] }`
+
+## Generation Flow
+1) User adds nodes; all nodes require a non‑empty `data.description` before generate.
+2) `webAppGenerator.generateFromWorkflow(nodes, edges, history)` builds a change summary (diff), crafts messages and calls AI via `aiService`.
+3) AI returns strict JSON: `{ "files": [{ "name": "...", "content": "..." }] }` (no markdown blocks).
+4) The service picks `index.html` (or first `.html`) as `generatedApp` and returns all `projectFiles`.
+5) Preview publishing: files are posted to `/api/preview`. If S3 is configured, files go to S3; otherwise stored in memory.
+6) The preview URL is either S3 public URL or `/api/preview/{id}/index.html`.
+
+## Preview Publishing Rules
+- Rewrite absolute root paths to relative for subpath compatibility:
+  - In HTML: `href="/x" → href="./x"`, `src="/x" → src="./x"`
+  - In JS: `serviceWorker.register('/service-worker.js')` → `serviceWorker.register('service-worker.js')`
+  - In CSS: `url("/x")`/`url('/x')`/`url(/x)` → `url(./x)`
+- If code attempts to register a service worker but no `service-worker.js` is present, inject a minimal one.
+
+## AI Prompt and Constraints (aiService.generateProjectStructure)
+- Output must be a cohesive static web project:
+  - `index.html`, `styles.css`, `app.js`, `components.js`, `utils.js`, `manifest.json`, `service-worker.js`
+- Use modern vanilla JavaScript ES modules; no frameworks in generated app.
+- Tailwind via CDN only (for generated app styling).
+- Persist data with `localStorage` only; offline‑first with service worker.
+- Accessibility and clean minimalist UI guidelines are included in the system prompt.
+- Return JSON only; no markdown code fences or explanations.
+
+## Coding Standards (MuxFlow codebase)
+- TypeScript
+  - Use domain types from `src/types` for props, params, and state where applicable.
+  - Prefer explicit types for exported APIs and complex function signatures.
+  - Avoid `any` and unsafe casts.
+- Naming
+  - Descriptive, intention‑revealing names; avoid 1–2 letter identifiers.
+  - Functions: verbs; variables: nouns.
+- Control Flow
+  - Use early returns. Handle errors and edge cases first.
+  - Don’t swallow errors; log and surface appropriate UI feedback.
+- React
+  - Keep state in `WorkflowContext`; avoid duplicating workflow state elsewhere.
+  - Use `useCallback` for handlers passed to children.
+  - Avoid unnecessary renders and deep prop drilling.
+- UI Feedback
+  - Do not use `alert`, `confirm`, or `prompt`. Use `react-hot-toast` for non‑blocking feedback.
+- Comments
+  - Remove redundant comments. Code should be self‑explanatory.
+  - Only add comments for non‑obvious intent; keep them concise.
+
+## Performance & Security
+- Lazy/dynamic import heavy libs where possible (e.g., `jszip`).
+- In `/api/ai`, forward only necessary headers; sanitize errors.
+- Preview content types are inferred; default to safe text types.
+- Avoid external network calls in generated project except Tailwind CDN.
+
+## Environment Variables
+- AI: `OPENROUTER_API_KEY` or `NEXT_PUBLIC_OPENROUTER_API_KEY`; `NEXT_PUBLIC_DEFAULT_MODEL` optional
+- S3: `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET`
+  - Optional: `S3_ENDPOINT`, `S3_FORCE_PATH_STYLE`, `S3_PUBLIC_BASE_URL`
+
+## Testing/Validation (recommended)
+- Validate AI JSON schema (consider `zod`) before parsing/using files.
+- Add unit tests for `workflowDiff` (hashing, mermaid, diffs) and parser edge cases.
+
+## PR Checklist
+- Types are explicit for exported functions/components.
+- No dead code, redundant comments, or unused vars.
+- No `alert/confirm/prompt`. Use toasts.
+- Generated app constraints preserved (vanilla ESM, Tailwind CDN, localStorage, service worker).
+- Preview rewriting logic intact; service worker fallback preserved.
+- Lint clean.
+
+## Glossary
+- Generated App: HTML content used for inline iframe preview (usually `index.html`).
+- Project Files: Array of `{ name, content }` returned by AI for export and full preview.
+- Preview Store: Either S3 (public URL) or server in‑memory map keyed by preview id.

@@ -43,7 +43,7 @@ function getS3ClientConfig(): {
   const region = process.env.S3_REGION as string;
   const accessKeyId = process.env.S3_ACCESS_KEY as string;
   const secretAccessKey = process.env.S3_SECRET as string;
-  const endpoint = process.env.S3_ENDPOINT as string | undefined; // e.g., http://localhost:9000 for MinIO, or R2 endpoint
+  const endpoint = process.env.S3_ENDPOINT as string | undefined;
   const forcePathStyle = (process.env.S3_FORCE_PATH_STYLE || 'true').toLowerCase() === 'true';
   const config: {
     region: string;
@@ -108,9 +108,14 @@ export async function POST(request: Request) {
   // Derive id and files
   type BodyWithFiles = { id?: string; files?: Array<{ name: string; content: unknown; type?: string }> };
   const hasObject = typeof body === 'object' && body !== null && !Array.isArray(body);
-  const id: string = (hasObject && typeof (body as BodyWithFiles).id === 'string')
+  const idProvided = hasObject && typeof (body as BodyWithFiles).id === 'string';
+  const baseId: string = idProvided
     ? (body as BodyWithFiles).id as string
     : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  // In development, ensure a unique id per upload to avoid CDN cache collisions when clients reuse ids
+  const id: string = (process.env.NODE_ENV !== 'production' && idProvided)
+    ? `${baseId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+    : baseId;
 
   const filesInput: unknown = Array.isArray(body) ? body : (hasObject ? (body as BodyWithFiles).files : []);
   const files: Array<{ name: string; content: string; type?: string }> = [];

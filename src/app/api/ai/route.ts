@@ -4,7 +4,7 @@ type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
 export async function POST(request: Request) {
   const apiKey = process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || '';
-  const model = process.env.DEFAULT_MODEL || process.env.NEXT_PUBLIC_DEFAULT_MODEL || 'google/gemini-flash-1.5';
+  const model = process.env.NEXT_PUBLIC_DEFAULT_MODEL || process.env.DEFAULT_MODEL || 'google/gemini-2.5-flash';
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'API key not configured' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }

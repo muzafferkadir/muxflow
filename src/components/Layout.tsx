@@ -35,7 +35,6 @@ export default function Layout() {
     setMounted(true);
   }, []);
 
-  // Keyboard shortcut for saving (Ctrl+S / Cmd+S)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -57,7 +56,6 @@ export default function Layout() {
   return (
     <main className="h-screen w-screen min-w-[900px] bg-gray-50 overflow-visible">
       <div className="h-full flex flex-col">
-        {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-bold text-gray-900">MuxFlow</h1>
@@ -70,7 +68,6 @@ export default function Layout() {
             )}
           </div>
           <div className="flex items-center space-x-3">
-            {/* Save Workflow Button */}
             <button 
               onClick={saveWorkflow}
               disabled={isSaved}
@@ -85,7 +82,6 @@ export default function Layout() {
               <span className="text-xs opacity-75">(Ctrl+S)</span>
             </button>
 
-            {/* Generate App Button */}
             <button 
               onClick={handleGenerateApp}
               disabled={isProcessing || nodes.length === 0 || !isSaved || !allNodesHaveDescriptions}
@@ -123,7 +119,6 @@ export default function Layout() {
           </div>
         </header>
 
-        {/* Tab Navigation - N8n Style Centered */}
         <div className="absolute top-[52px] left-1/2 transform -translate-x-1/2 z-10">
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex">
             <button
@@ -179,7 +174,6 @@ export default function Layout() {
           )}
         </div>
 
-        {/* Slide-over History Sidebar */}
         {showHistory && (
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute z-[11] right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-xl pointer-events-auto flex flex-col">
@@ -204,18 +198,67 @@ export default function Layout() {
                   <div className="p-4 text-sm text-gray-500">No history yet.</div>
                 ) : (
                   <ul className="divide-y divide-gray-100">
-                    {history.map((h) => (
-                      <li key={h.id} className="p-4">
-                        <div className="text-xs text-gray-500">{new Date(h.createdAt).toLocaleString()}</div>
-                        <div className="text-sm font-medium text-gray-800 mt-1">{h.totalNodes} nodes, {h.totalEdges} edges</div>
-                        <div className="text-xs text-gray-600 mt-1 line-clamp-2">{h.nodeLabels.join(', ')}</div>
-                        {h.mermaid && (
-                          <pre className="mt-2 p-2 bg-gray-50 text-[10px] text-gray-700 rounded border border-gray-100 overflow-auto">
+                    {history.map((h, idx) => {
+                      const prev = history[idx + 1];
+                      let changeSummary: string | null = null;
+                      if (prev && h.nodesSnapshot && prev.nodesSnapshot && h.edgesSnapshot && prev.edgesSnapshot) {
+                        try {
+                          const currNodes = new Map(h.nodesSnapshot.map(n => [n.id, n]));
+                          const prevNodes = new Map(prev.nodesSnapshot.map(n => [n.id, n]));
+                          const currEdges = new Set(h.edgesSnapshot.map(e => `${e.source}->${e.target}`));
+                          const prevEdges = new Set(prev.edgesSnapshot.map(e => `${e.source}->${e.target}`));
+
+                          let addedNodes = 0, removedNodes = 0, modifiedNodes = 0;
+                          for (const id of currNodes.keys()) {
+                            if (!prevNodes.has(id)) addedNodes++;
+                            else {
+                              const a = currNodes.get(id)!;
+                              const b = prevNodes.get(id)!;
+                              if (
+                                a.label !== b.label ||
+                                a.nodeType !== b.nodeType ||
+                                (a.description || '') !== (b.description || '') ||
+                                (a.prompt || '') !== (b.prompt || '') ||
+                                (a.generatedCode || '') !== (b.generatedCode || '')
+                              ) {
+                                modifiedNodes++;
+                              }
+                            }
+                          }
+                          for (const id of prevNodes.keys()) {
+                            if (!currNodes.has(id)) removedNodes++;
+                          }
+
+                          let addedEdges = 0, removedEdges = 0;
+                          for (const e of currEdges) if (!prevEdges.has(e)) addedEdges++;
+                          for (const e of prevEdges) if (!currEdges.has(e)) removedEdges++;
+
+                          const parts: string[] = [];
+                          if (addedNodes) parts.push(`+${addedNodes} node`);
+                          if (removedNodes) parts.push(`-${removedNodes} node`);
+                          if (modifiedNodes) parts.push(`~${modifiedNodes} node changed`);
+                          if (addedEdges) parts.push(`+${addedEdges} edge`);
+                          if (removedEdges) parts.push(`-${removedEdges} edge`);
+                          changeSummary = parts.length ? parts.join(', ') : 'No changes from previous';
+                        } catch {}
+                      }
+
+                      return (
+                        <li key={h.id} className="p-4">
+                          <div className="text-xs text-gray-500">{new Date(h.createdAt).toLocaleString()}</div>
+                          <div className="text-sm font-medium text-gray-800 mt-1">{h.totalNodes} nodes, {h.totalEdges} edges</div>
+                          {changeSummary && (
+                            <div className="text-xs text-gray-600 mt-1">{changeSummary}</div>
+                          )}
+                          <div className="text-xs text-gray-600 mt-1 line-clamp-2">{h.nodeLabels.join(', ')}</div>
+                          {h.mermaid && (
+                            <pre className="mt-2 p-2 bg-gray-50 text-[10px] text-gray-700 rounded border border-gray-100 overflow-auto">
 {h.mermaid}
-                          </pre>
-                        )}
-                      </li>
-                    ))}
+                            </pre>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>

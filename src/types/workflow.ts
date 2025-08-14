@@ -26,6 +26,15 @@ export interface NodeInputData {
   description?: string;
 }
 
+export interface GenerationHistoryNodeSnapshot {
+  id: string;
+  label: string;
+  nodeType: string;
+  description?: string;
+  prompt?: string;
+  generatedCode?: string;
+}
+
 export interface GenerationHistoryItem {
   id: string;
   createdAt: string;
@@ -34,6 +43,10 @@ export interface GenerationHistoryItem {
   totalNodes: number;
   totalEdges: number;
   mermaid: string;
+  // Optional extended snapshot data for change detection
+  nodesSnapshot?: GenerationHistoryNodeSnapshot[];
+  edgesSnapshot?: WorkflowEdgeLike[];
+  snapshotHash?: string;
 }
 
 

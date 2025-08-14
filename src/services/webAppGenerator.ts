@@ -2,6 +2,7 @@ import type { ProjectFile } from '@/types';
 
 import type { WorkflowNodeLike, WorkflowEdgeLike } from '@/types/workflow';
 import type { GenerationHistoryItem } from '@/types/workflow';
+import { diffAgainstHistory } from '@/services/workflowDiff';
 
 export class WebAppGeneratorService {
   async generateFromWorkflow(nodes: WorkflowNodeLike[], _edges: WorkflowEdgeLike[], _history?: GenerationHistoryItem[]): Promise<{
@@ -11,29 +12,22 @@ export class WebAppGeneratorService {
     error?: string;
   }> {
     try {
-      void _edges;
-      void _history;
       const { aiService } = await import('./aiService');
-      const projectResponse = await aiService.generateProjectStructure(nodes);
+      const lastFive = _history && Array.isArray(_history) ? _history.slice(0, 5) : undefined;
+      const latest = lastFive && lastFive.length > 0 ? lastFive[0] : undefined;
+      const diff = diffAgainstHistory(nodes, _edges, latest);
+      const diffSummary = diff ? diff.summary : '';
+      const projectResponse = await aiService.generateProjectStructure(nodes as Array<{ data: { nodeType: string; label: string; description?: string } }>, lastFive, diffSummary);
 
-      let htmlContent = undefined;
+      let htmlContent: string | undefined = undefined;
       let projectFiles: ProjectFile[] | undefined = undefined;
 
-      // If project response contains an index.html, prefer that for preview.
       if (!projectResponse.error && projectResponse.content) {
         const parsedProject = this.parseProjectFromResponse(projectResponse.content);
         if (parsedProject.success && parsedProject.files) {
-          const index = parsedProject.files.find(f => f.name.toLowerCase() === 'index.html') || parsedProject.files[0];
-          if (index) {
-            htmlContent = index.content;
-          }
-        }
-      }
-
-      if (!projectResponse.error && projectResponse.content) {
-        const parsedProject = this.parseProjectFromResponse(projectResponse.content);
-        if (parsedProject.success) {
           projectFiles = parsedProject.files;
+          const index = parsedProject.files.find(f => f.name.toLowerCase() === 'index.html') || parsedProject.files.find(f => f.name.toLowerCase().endsWith('.html')) || parsedProject.files[0];
+          if (index) htmlContent = index.content;
         }
       }
 
@@ -49,45 +43,6 @@ export class WebAppGeneratorService {
         error: error instanceof Error ? error.message : 'Failed to generate app'
       };
     }
-  }
-
-// Remove markdown code blocks and any wrapper formatting
-  private parseHtmlFromResponse(content: string): string {
-    let cleaned = content
-      .replace(/```html\s*/gi, '')
-      .replace(/```\s*$/g, '')
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/^Here's.*?:/i, '')
-      .replace(/^The.*?application.*?:/i, '')
-      .replace(/^I'll.*?:/i, '')
-      .trim();
-    
-    const htmlMatch = cleaned.match(/<!DOCTYPE[\s\S]*?<\/html>/i);
-    if (htmlMatch) {
-      cleaned = htmlMatch[0];
-    } else {
-      const htmlTagMatch = cleaned.match(/<html[\s\S]*?<\/html>/i);
-      if (htmlTagMatch) {
-        cleaned = '<!DOCTYPE html>\n' + htmlTagMatch[0];
-      }
-    }
-    
-    if (!cleaned.toLowerCase().includes('<!doctype') && !cleaned.toLowerCase().includes('<html')) {
-      cleaned = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generated App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-${cleaned}
-</body>
-</html>`;
-    }
-    
-    return cleaned;
   }
 
   private parseProjectFromResponse(content: string): {

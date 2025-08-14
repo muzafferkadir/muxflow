@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Node, Edge } from 'reactflow';
 import { webAppGenerator } from '@/services/webAppGenerator';
+import { buildSnapshotFromNodesEdges, diffAgainstHistory, buildMermaidFromSnapshot } from '@/services/workflowDiff';
 import type { ProjectFile } from '@/types';
 import type { GenerationHistoryItem } from '@/types/workflow';
 import toast from 'react-hot-toast';
@@ -12,6 +13,7 @@ interface WorkflowNode extends Node {
     label: string;
     nodeType: string;
     description?: string;
+    prompt?: string;
     generatedCode?: string;
     isProcessing?: boolean;
     error?: string;
@@ -25,7 +27,6 @@ interface WorkflowContextType {
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
   isSaved: boolean;
   hasUnsavedChanges: boolean;
-  generatedProject: Record<string, unknown> | null;
   generatedApp: string | null;
   projectFiles: ProjectFile[] | null;
   webAppPreviewUrl: string | null;
@@ -46,7 +47,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [isSaved, setIsSaved] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [generatedProject, setGeneratedProject] = useState<Record<string, unknown> | null>(null);
   const [generatedApp, setGeneratedApp] = useState<string | null>(null);
   const [projectFiles, setProjectFiles] = useState<ProjectFile[] | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -56,19 +56,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<GenerationHistoryItem[]>([]);
   const saveTimeoutRef = React.useRef<number | null>(null);
 
-  // Load workflow from localStorage on mount
   useEffect(() => {
-    const savedProject = localStorage.getItem('muxflow_project');
-    if (savedProject) {
-      try {
-        const projectData = JSON.parse(savedProject);
-        setGeneratedProject(projectData);
-      } catch (error) {
-        console.error('Error loading saved project:', error);
-      }
-    }
-
-    // Load workflow from localStorage
     const savedWorkflow = localStorage.getItem('muxflow_workflow');
     if (savedWorkflow) {
       try {
@@ -83,7 +71,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     }
 
     setIsInitialLoad(false);
-    // Ensure a stable preview id per browser/session
     try {
       const savedPreviewId = localStorage.getItem('muxflow_preview_id');
       if (savedPreviewId) {
@@ -95,7 +82,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
 
-    // Load generation history
     try {
       const savedHistory = localStorage.getItem('muxflow_history');
       if (savedHistory) {
@@ -106,13 +92,19 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isInitialLoad && (nodes.length > 0 || edges.length > 0)) {
+    if (isInitialLoad) return;
+    const last = history[0];
+    const diff = diffAgainstHistory(nodes, edges, last);
+    const changed = !!diff;
+    if (changed) {
       setHasUnsavedChanges(true);
       setIsSaved(false);
+    } else {
+      setHasUnsavedChanges(false);
+      setIsSaved(true);
     }
-  }, [nodes, edges, isInitialLoad]);
+  }, [nodes, edges, isInitialLoad, history]);
 
-  // Auto-save with debounce (5s)
   useEffect(() => {
     if (isInitialLoad) return;
     if (!hasUnsavedChanges) return;
@@ -143,8 +135,8 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
         e.preventDefault();
-        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-        return 'You have unsaved changes. Are you sure you want to leave?';
+        e.returnValue = '';
+        return '';
       }
     };
 
@@ -175,18 +167,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     setIsGeneratingWebApp(true);
     
     try {
-      // Save project to localStorage
-      const projectData = {
-        nodes: nodes,
-        edges: edges,
-        timestamp: new Date().toISOString(),
-        workflowType: 'integrated-app'
-      };
-      
-      localStorage.setItem('muxflow_project', JSON.stringify(projectData));
-      setGeneratedProject(projectData);
-
-      const result = await webAppGenerator.generateFromWorkflow(nodes, edges);
+      const result = await webAppGenerator.generateFromWorkflow(nodes, edges, history);
       
       if (result.success) {
         if (result.htmlContent) {
@@ -197,7 +178,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
           setProjectFiles(result.projectFiles);
         }
         
-        // Publish preview files to in-memory store via API and set preview URL
         try {
           const filesForPreview: Array<{ name: string; content: string; type?: string }> = [];
 
@@ -220,7 +200,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
               }
             }
 
-            // Rewrite absolute root paths to relative for preview subpath compatibility
             const rewrittenFiles = filesForPreview.map((f) => {
               const isHtml = f.name.toLowerCase().endsWith('.html');
               const isJs = f.name.toLowerCase().endsWith('.js');
@@ -285,10 +264,14 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
           setWebAppPreviewUrl(null);
         }
 
-        console.log('App generated successfully');
+        
 
-        // Append to generation history
         try {
+          const snapshot = buildSnapshotFromNodesEdges(nodes, edges);
+          const nodesSnapshot = snapshot.nodes;
+          const edgesSnapshot = snapshot.edges;
+          const snapshotHash = snapshot.hash;
+
           const newItem: GenerationHistoryItem = {
             id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
             createdAt: new Date().toISOString(),
@@ -296,23 +279,15 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
             nodeTypes: nodes.map((n) => n.data.nodeType),
             totalNodes: nodes.length,
             totalEdges: edges.length,
-            mermaid: (() => {
-              try {
-                const lines: string[] = ['graph TD'];
-                nodes.forEach((n) => {
-                  const safeLabel = (n.data.label || n.id).replace(/[\n\r]/g, ' ');
-                  lines.push(`${n.id}["${safeLabel}"]`);
-                });
-                edges.forEach((e) => {
-                  lines.push(`${e.source}-->${e.target}`);
-                });
-                return lines.join('\n');
-              } catch {
-                return '';
-              }
-            })()
+            mermaid: buildMermaidFromSnapshot(nodesSnapshot, edgesSnapshot),
+            nodesSnapshot,
+            edgesSnapshot,
+            snapshotHash,
           };
           setHistory((prev) => {
+            if (prev.length > 0 && prev[0]?.snapshotHash && newItem.snapshotHash && prev[0].snapshotHash === newItem.snapshotHash) {
+              return prev;
+            }
             const updated = [newItem, ...prev].slice(0, 100);
             try {
               localStorage.setItem('muxflow_history', JSON.stringify(updated));
@@ -330,7 +305,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsGeneratingWebApp(false);
     }
-  }, [nodes, edges, previewId]);
+  }, [nodes, edges, previewId, history]);
 
   const saveWorkflow = useCallback(() => {
     try {
@@ -378,7 +353,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       : (generatedApp ? [{ name: 'index.html', content: generatedApp }] : null);
     
     if (!files) {
-      alert('No generated app to export. Please generate an app first.');
+      toast.error('No generated app to export. Please generate an app first.');
       return;
     }
 
@@ -421,7 +396,6 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       setEdges,
       isSaved,
       hasUnsavedChanges,
-      generatedProject,
       generatedApp,
       projectFiles,
       webAppPreviewUrl,

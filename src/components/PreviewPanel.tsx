@@ -7,13 +7,7 @@ import { useWorkflow } from '@/contexts/WorkflowContext';
 export default function PreviewPanel() {
   const [mounted, setMounted] = React.useState(false);
   
-  const { 
-    nodes, 
-    generatedApp,
-    webAppPreviewUrl,
-    isGeneratingWebApp,
-    projectFiles
-  } = useWorkflow();
+  const { nodes, generatedApp, webAppPreviewUrl, isGeneratingWebApp, projectFiles } = useWorkflow();
 
   React.useEffect(() => {
     setMounted(true);

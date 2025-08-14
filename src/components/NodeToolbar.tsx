@@ -1,21 +1,11 @@
 'use client';
 
 import React from 'react';
-import { 
-  MessageSquare, 
-  Zap, 
-  FileText, 
-} from 'lucide-react';
-
-interface NodeData {
-  label: string;
-  nodeType: string;
-  prompt?: string;
-  description?: string;
-}
+import { MessageSquare, Zap, FileText } from 'lucide-react';
+import type { NodeInputData } from '@/types/workflow';
 
 interface NodeToolbarProps {
-  onAddNode: (nodeData: NodeData) => void;
+  onAddNode: (nodeData: NodeInputData) => void;
 }
 
 const nodeTemplates = [
@@ -60,13 +50,10 @@ const nodeTemplates = [
 export default function NodeToolbar({ onAddNode }: NodeToolbarProps) {
   return (
     <div className="h-auto flex flex-col rounded-lg">
-      {/* Header */}
       <div className="p-3 border-b border-gray-200">
         <h3 className="text-sm font-semibold text-gray-900 mb-1">Add Nodes</h3>
         <p className="text-xs text-gray-600">Click to add to workflow</p>
       </div>
-
-      {/* Node List */}
       <div className="p-3 space-y-2">
         {nodeTemplates.map((template) => {
           const IconComponent = template.icon;
