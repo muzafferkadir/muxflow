@@ -21,7 +21,9 @@ export default function Layout() {
     isSaved,
     isGeneratingWebApp,
     history,
-    clearHistory
+    clearHistory,
+    resetPreviewId,
+    previewId
   } = useWorkflow();
 
   const isProcessing = isGeneratingWebApp;
@@ -68,6 +70,18 @@ export default function Layout() {
             )}
           </div>
           <div className="flex items-center space-x-3">
+            {process.env.NODE_ENV === 'development' && (
+              <div className="flex flex-col items-end mr-2">
+                <button
+                  onClick={resetPreviewId}
+                  className="px-3 py-2 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  title="Reset preview id (bust CDN cache)"
+                >
+                  Reset Preview ID
+                </button>
+                <div className="mt-1 text-[10px] text-gray-500 select-all">id: {previewId}</div>
+              </div>
+            )}
             <button 
               onClick={saveWorkflow}
               disabled={isSaved}

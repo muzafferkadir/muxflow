@@ -109,14 +109,10 @@ export async function POST(request: Request) {
   type BodyWithFiles = { id?: string; files?: Array<{ name: string; content: unknown; type?: string }> };
   const hasObject = typeof body === 'object' && body !== null && !Array.isArray(body);
   const idProvided = hasObject && typeof (body as BodyWithFiles).id === 'string';
-  const baseId: string = idProvided
+  const id: string = idProvided
     ? (body as BodyWithFiles).id as string
     : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  // In development, ensure a unique id per upload to avoid CDN cache collisions when clients reuse ids
-  const id: string = (process.env.NODE_ENV !== 'production' && idProvided)
-    ? `${baseId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
-    : baseId;
-
+    
   const filesInput: unknown = Array.isArray(body) ? body : (hasObject ? (body as BodyWithFiles).files : []);
   const files: Array<{ name: string; content: string; type?: string }> = [];
   if (Array.isArray(filesInput)) {

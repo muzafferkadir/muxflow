@@ -30,6 +30,7 @@ interface WorkflowContextType {
   generatedApp: string | null;
   projectFiles: ProjectFile[] | null;
   webAppPreviewUrl: string | null;
+  previewId: string | null;
   isGeneratingWebApp: boolean;
   generateApp: () => Promise<void>;
   saveWorkflow: () => void;
@@ -38,6 +39,7 @@ interface WorkflowContextType {
   deleteNode: (nodeId: string) => void;
   history: GenerationHistoryItem[];
   clearHistory: () => void;
+  resetPreviewId: () => void;
 }
 
 const WorkflowContext = createContext<WorkflowContextType | undefined>(undefined);
@@ -51,7 +53,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [projectFiles, setProjectFiles] = useState<ProjectFile[] | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [webAppPreviewUrl, setWebAppPreviewUrl] = useState<string | null>(null);
-  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string>(() => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
   const [isGeneratingWebApp, setIsGeneratingWebApp] = useState(false);
   const [history, setHistory] = useState<GenerationHistoryItem[]>([]);
   const saveTimeoutRef = React.useRef<number | null>(null);
@@ -250,9 +252,9 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
             if (res.ok) {
               const data = await res.json();
               if (data.url) {
-                setWebAppPreviewUrl(data.url);
+                setWebAppPreviewUrl(`${data.url}?t=${Date.now()}`);
               } else {
-                setWebAppPreviewUrl(`/api/preview/${previewId}/index.html`);
+                setWebAppPreviewUrl(`/api/preview/${previewId}/index.html?t=${Date.now()}`);
               }
             } else {
               console.warn('Failed to publish preview');
@@ -388,6 +390,16 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
     URL.revokeObjectURL(url);
   }, [projectFiles, generatedApp]);
 
+  const resetPreviewId = useCallback(() => {
+    const newId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    try {
+      localStorage.setItem('appletflow_preview_id', newId);
+    } catch {}
+    setPreviewId(newId);
+    setWebAppPreviewUrl(null);
+    toast.success('Preview ID reset');
+  }, []);
+
   return (
     <WorkflowContext.Provider value={{
       nodes,
@@ -399,6 +411,7 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       generatedApp,
       projectFiles,
       webAppPreviewUrl,
+      previewId,
       isGeneratingWebApp,
       generateApp,
       saveWorkflow,
@@ -409,7 +422,8 @@ export function WorkflowProvider({ children }: { children: React.ReactNode }) {
       clearHistory: () => {
         setHistory([]);
         try { localStorage.removeItem('appletflow_history'); } catch {}
-      }
+      },
+      resetPreviewId
     }}>
       {children}
     </WorkflowContext.Provider>
